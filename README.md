@@ -20,17 +20,37 @@ pip install oauth2client
 6. You are ready to go
 
 ## How to use:
-
+##### Basic use:
 ```
-./stringify.py 
---name SPREADSHEET_NAME 
---default ANDROID_DEFAULT_LANGUAGE 
---path ANDROID_STRINGS_EXPORT_PATH 
---ipath IOS_EXPORT_PATH
+./stringify.py -n spreadsheet_name
 ```
 You will be asked to login in to google docs on the first run. Copy token from redirected path ```http://localhost/code=TOKEN``` and press enter. TOKEN will be stored in ```.credentials``` file.
 
-All parameters are optional except for SPREADSHEET_NAME.
+
+##### More info:
+```
+./stringify.py -h
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -d DEFAULT_LANG, --default-lang DEFAULT_LANG
+                        Android default language
+  -n SPREADSHEET_NAME, --spreadsheet-name SPREADSHEET_NAME
+                        Google Spreadsheet name
+  -p EXPORT_PATH, --export-path EXPORT_PATH
+                        Localized strings destination path
+  -x EXPORT_XML_NAME, --export-xml-name EXPORT_XML_NAME
+                        Android xml name. Default: strings.xml
+  -m MODE, --mode MODE  Available modes: EXPORT_IOS - exports ios strings,
+                        EXPORT_ANDROID - exports android strings,
+                        IMPORT_ANDROID - import Android strings and create
+                        Google Spreadsheet, IMPORT_IOS - import iOS strings
+                        and create Google Spreadsheet, EXPORT_ALL (default) -
+                        exports both Android and iOS
+  -o LOGS_OFF, --logs-off LOGS_OFF
+                        Turns progress logs off
+
+```
 
 ## Sample spreadsheet:
 
