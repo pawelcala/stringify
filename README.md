@@ -60,6 +60,14 @@ optional arguments:
 * first row cells corespond strings languages
 * first column cells are strings variable names
 
+###### Example: Export Android strings
+```
+./stringify.py -n sample_spreadsheet -m EXPORT_ANDROID -x welcome.xml -p app/src/main/res
+```
+
+_Result:_
+
+![Export Android](http://imgur.com/IzEEtFX.png)
 
 ## Other
 

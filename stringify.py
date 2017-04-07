@@ -219,7 +219,7 @@ def export_android(languages, strings,
     cwd = os.getcwd()
     if export_path:
         try:
-            os.mkdir(export_path)
+            os.makedirs(export_path, exist_ok=True)
         except Exception:
             pass
         os.chdir(export_path)
@@ -247,7 +247,7 @@ def export_ios(languages, strings, export_path=None):
     cwd = os.getcwd()
     if export_path:
         try:
-            os.mkdir(export_path)
+            os.makedirs(export_path, exist_ok=True)
         except:
             pass
 
