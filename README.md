@@ -69,6 +69,15 @@ _Result:_
 
 ![Export Android](http://imgur.com/IzEEtFX.png)
 
+###### Example: Export iOS strings
+```
+./stringify.py -n sample_spreadsheet -m EXPORT_IOS -p resources
+```
+
+_Result:_
+
+![Export iOS](http://imgur.com/ydxXr9z.png)
+
 ## Other:
 
 Why there is no abstraction, no classes, etc? I wanted to create one-filer so it can be easy to distribute and fast to use.

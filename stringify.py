@@ -294,7 +294,7 @@ if __name__ == '__main__':
     script_mode = settings[SETTINGS_KEY_MODE]
     gdoc_name = settings[SETTINGS_KEY_GDOC_NAME]
 
-    if script_mode in (Mode.EXPORT_ALL.name, Mode.EXPORT_ANDROID.name, Mode.EXPORT_IOS):
+    if script_mode in (Mode.EXPORT_ALL.name, Mode.EXPORT_ANDROID.name, Mode.EXPORT_IOS.name):
         handle_export(script_mode, gdoc_name)
     if script_mode in (Mode.IMPORT_ANDROID.name, Mode.IMPORT_IOS.name):
         raise NotImplemented
