@@ -219,7 +219,7 @@ def export_android(languages, strings,
     cwd = os.getcwd()
     if export_path:
         try:
-            os.mkdir(export_path)
+            os.makedirs(export_path, exist_ok=True)
         except Exception:
             pass
         os.chdir(export_path)
@@ -247,7 +247,7 @@ def export_ios(languages, strings, export_path=None):
     cwd = os.getcwd()
     if export_path:
         try:
-            os.mkdir(export_path)
+            os.makedirs(export_path, exist_ok=True)
         except:
             pass
 
@@ -294,7 +294,7 @@ if __name__ == '__main__':
     script_mode = settings[SETTINGS_KEY_MODE]
     gdoc_name = settings[SETTINGS_KEY_GDOC_NAME]
 
-    if script_mode in (Mode.EXPORT_ALL.name, Mode.EXPORT_ANDROID.name, Mode.EXPORT_IOS):
+    if script_mode in (Mode.EXPORT_ALL.name, Mode.EXPORT_ANDROID.name, Mode.EXPORT_IOS.name):
         handle_export(script_mode, gdoc_name)
     if script_mode in (Mode.IMPORT_ANDROID.name, Mode.IMPORT_IOS.name):
         raise NotImplemented
