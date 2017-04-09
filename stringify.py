@@ -27,6 +27,57 @@ class Mode(Enum):
     IMPORT_IOS = 4
 
 
+class TranslationRow:
+    def __init__(self, key):
+        self.key = key
+        self.translations = dict()
+
+    def add_translation(self, lang, value):
+        self.translations.update({lang: value})
+
+    def get_translation(self, lang):
+        return self.translations.get(lang)
+
+
+class Dictionary:
+    def __init__(self):
+        self.dictionary = dict()
+        self.languages = set()
+
+    def add_translation(self, key, lang, word):
+        self.languages.add(lang)
+        translation_row = self.dictionary.get(key)
+        if translation_row is None:
+            translation_row = TranslationRow(key)
+            self.dictionary.update({translation_row.key: translation_row})
+
+        translation_row.add_translation(lang, word)
+
+    def get_translation(self, key, lang):
+        return self.dictionary.get(key).get_translation(lang)
+
+    def keys_iterator(self):
+        return self.dictionary
+
+
+# CONTENT PARSERS
+
+class Parser:
+    def parse(self, source):
+        raise NotImplemented
+
+
+class GoogleDocParser(Parser):
+    def parse(self, source):
+        pass
+
+
+# PRODUCERS
+class Producer:
+    def produce(self):
+        pass
+
+
 APP_NAME = "stringify"
 APP_VERSION = "0.0.2"
 
@@ -286,8 +337,8 @@ def handle_export(mode, gdoc_name):
 
 if __name__ == '__main__':
     log_version()
-
     decode_sys_args()
+
     credentials = oauth()
     gc = gspread.authorize(credentials)
 
