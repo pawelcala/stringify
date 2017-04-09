@@ -78,6 +78,16 @@ class Producer:
         pass
 
 
+class AndroidProducer(Producer):
+    def __init__(self, parser):
+        pass
+
+
+class SwiftProducer(Producer):
+    def __init__(self, parser):
+        pass
+
+
 APP_NAME = "stringify"
 APP_VERSION = "0.0.2"
 
