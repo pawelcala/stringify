@@ -176,6 +176,7 @@ def decode_sys_args():
         settings.update({SETTINGS_KEY_LOGS_ON, False})
 
 
+#todo use os.walk instead?
 def find_files(path='.', filename_regex=None):
     found_files = []
     for filename in os.listdir(path):
