@@ -176,6 +176,22 @@ def decode_sys_args():
         settings.update({SETTINGS_KEY_LOGS_ON, False})
 
 
+def find_files(path='.', filename_regex=None):
+    found_files = []
+    for filename in os.listdir(path):
+        filepath = os.path.join(path, filename)
+        if os.path.isdir(filepath):
+            list = find_files(filepath, filename_regex)
+            found_files.extend(list)
+        elif os.path.isfile(filepath):
+            if filename_regex and filename.startswith(filename_regex):
+                found_files.append(filepath)
+            elif filename_regex is None:
+                found_files.append(filepath)
+
+    return found_files
+
+
 def oauth_load_credentials():
     log_step("Loading saved credentials")
     try:
