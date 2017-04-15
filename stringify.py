@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 
 # system imports
+import time
 import argparse
-import io
 import os
 import re
 import sys
 import xml.etree.ElementTree as ET
-from xml.dom import minidom
 
 # Dependency imports
 import gspread
@@ -129,18 +128,21 @@ class GoogleDocsHandler(Command):
         languages = sorted(languages)
         for index, lang in enumerate(languages):
             column = index + 2
-            log_step("language ({}{}): {}".format(row, column, lang))
             spreadsheet.update_cell(row, column, lang)
 
         row = 2
         for key in dictionary.keys():
             spreadsheet.update_cell(row, 1, key)
+            cells = []
             for index, lang in enumerate(languages):
                 column = index + 2
                 translated_value = dictionary.get_translation(key, lang)
-                spreadsheet.update_cell(row, column, translated_value)
-                log_step("cell ({}{}): {}".format(row, column, translated_value))
+                cell = spreadsheet.cell(row, column)
+                cell.value = translated_value
+                cells.append(cell)
             row += 1
+
+            spreadsheet.update_cells(cells)
 
     def read(self, google_doc_name):
         pass
@@ -290,8 +292,8 @@ SETTINGS_DEFAULT_LOGS_ON = True
 
 settings = dict()
 
-G_CLIENT_ID = '463196519538-07lgrq1rim3mie9p8tnc9rl06o18di9g.apps.googleusercontent.com'
-G_CLIENT_SECRET = 'Je8slGzLy8kVUXRHcN5fXCJ2'
+G_CLIENT_ID = 'ENTER_CLIENT_ID'
+G_CLIENT_SECRET = 'ENTER_CLIENT_SECRET'
 G_SCOPE = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
 G_REDIRECT = 'http://localhost/'
 G_FILE = ".credentials"
@@ -326,19 +328,28 @@ def decode_sys_args():
     settings.update({SETTINGS_KEY_CREDENTIALS_LOCATION: G_FILE})
 
     parser = argparse.ArgumentParser(description='Stringify parser')
-    parser.add_argument("-d", "--default-lang", help="Android default language")
-    parser.add_argument("-n", "--spreadsheet-name", help="Google Spreadsheet name")
-    parser.add_argument("-p", "--dest-path", help="Localized strings destination path")
-    parser.add_argument("-x", "--xml-filename", help="Android xml name. Default: strings.xml")
+    parser.add_argument("-d", "--default-lang", help="Android default language. Default language sets values folder "
+                                                     "without language postfix. If left 'en' is set.")
+
+    parser.add_argument("-n", "--spreadsheet-name", help="Google Spreadsheet name.")
+
+    parser.add_argument("-p", "--dest-path",
+                        help="Localized strings destination path. Should point on project/module directory "
+                             "(Used in both modes - IMPORT and EXPORT).")
+
+    parser.add_argument("-x", "--xml-filename", help="Android xml or swift strings filename. "
+                                                     "Default: strings.xml (Android), Localizable.strings (iOS)")
+
     parser.add_argument("-m", "--mode",
                         help="Available modes: "
-                             "export_ios - exports ios strings,\n"
-                             "export_android - exports android strings,\n"
-                             "import_android - import Android strings and create Google Spreadsheet,\n"
-                             "import_ios - import iOS strings and create Google Spreadsheet,\n"
-                             "export_all (default) - exports both Android and iOS\n")
-    parser.add_argument("-o", "--logs-off", help="Turns progress logs off")
-    parser.add_argument("-u", "--oauth-credentials-location", help="Directory to save/load oauth credentials")
+                             "export_ios - exports/uploads ios strings,\n"
+                             "export_android - exports/uploads android strings,\n"
+                             "import_android - import/download Android strings and create Google Spreadsheet,\n"
+                             "import_ios - import/download iOS strings and create Google Spreadsheet\n")
+
+    parser.add_argument("-o", "--logs-off", help="Turns progress debug logs off")
+
+    parser.add_argument("-u", "--oauth-credentials-location", help="oauth credentials location. Default: .credentials")
 
     args = parser.parse_args()
 
@@ -383,142 +394,145 @@ def find_files(path='.', filename_regex=None):
     return found_files
 
 
-def load_languages(sheet):
-    log_step("Reading languages")
-    column = 2
-    languages = []
-    while True:
-        lang_code = sheet.cell(1, column).value
-        if len(lang_code.strip()) > 0:
-            languages.append(lang_code)
-            column += 1
-        else:
-            return languages
+#
+# def load_languages(sheet):
+#     log_step("Reading languages")
+#     column = 2
+#     languages = []
+#     while True:
+#         lang_code = sheet.cell(1, column).value
+#         if len(lang_code.strip()) > 0:
+#             languages.append(lang_code)
+#             column += 1
+#         else:
+#             return languages
+#
+#
+# def read_row(sheet, row, langs_count):
+#     row_data = list()
+#     for column in range(1, langs_count + 2):
+#         cell_value = sheet.cell(row, column).value
+#         if len(cell_value.strip()) == 0 and column == 1:
+#             return row_data
+#         else:
+#             row_data.append(cell_value)
+#     return row_data
+#
+#
+# def read_strings(sheet, langs_count):
+#     log_step("Reading spreadsheet cells")
+#     row = 2
+#     rows = []
+#     empty_row = False
+#     while True:
+#         row_data = read_row(sheet, row, langs_count)
+#         if len(row_data) == 0:
+#             if empty_row:
+#                 return rows
+#             else:
+#                 empty_row = True
+#         else:
+#             empty_row = False
+#
+#         rows.append(row_data)
+#         row += 1
+
+#
+# def save_file(content, dir_name, file_name):
+#     log_step("Saving file {}/{}".format(dir_name, file_name))
+#     cwd = os.getcwd()
+#     try:
+#         os.mkdir(dir_name)
+#     except Exception:
+#         pass
+#
+#     try:
+#         os.chdir(dir_name)
+#     except Exception:
+#         pass
+#
+#     file = open(file_name, "w")
+#     file.write(content)
+#     file.close()
+#     os.chdir(cwd)
+
+#
+# def export_android(languages, strings,
+#                    export_path=None,
+#                    default_language=SETTINGS_DEFAULT_LANG,
+#                    xml_file_name=SETTINGS_DEFAULT_XML_NAME):
+#     log_step("Exporting Android strings")
+#     cwd = os.getcwd()
+#     if export_path:
+#         try:
+#             os.makedirs(export_path, exist_ok=True)
+#         except Exception:
+#             pass
+#         os.chdir(export_path)
+#
+#     for i, lang in enumerate(languages):
+#         xml = ET.Element('resources')
+#         for row in strings:
+#             if len(row) == 0:
+#                 continue
+#             string_row = ET.SubElement(xml, 'string')
+#             string_row.set('name', row[0])
+#             string_row.text = row[i + 1]
+#
+#         dom = minidom.parseString(ET.tostring(xml, 'utf-8'))
+#         pretty_dom = dom.toprettyxml()
+#
+#         dir_name = "values".format(default_language) if default_language == lang else "values-{}".format(lang)
+#         save_file(pretty_dom, dir_name, xml_file_name)
+#
+#     os.chdir(cwd)
+
+#
+# def export_ios(languages, strings, export_path=None):
+#     log_step("Exporting iOS strings")
+#     cwd = os.getcwd()
+#     if export_path:
+#         try:
+#             os.makedirs(export_path, exist_ok=True)
+#         except:
+#             pass
+#
+#         os.chdir(export_path)
+#
+#     for i, lang in enumerate(languages):
+#         output = io.StringIO()
+#         for row in strings:
+#             if len(row) == 0:
+#                 continue
+#             output.write('"{}" = "{}";\n'.format(row[0], row[i + 1]))
+#
+#         language_dir = "{}.lproj".format(lang)
+#         save_file(output.getvalue(), language_dir, "Localizable.strings")
+#
+#     os.chdir(cwd)
 
 
-def read_row(sheet, row, langs_count):
-    row_data = list()
-    for column in range(1, langs_count + 2):
-        cell_value = sheet.cell(row, column).value
-        if len(cell_value.strip()) == 0 and column == 1:
-            return row_data
-        else:
-            row_data.append(cell_value)
-    return row_data
-
-
-def read_strings(sheet, langs_count):
-    log_step("Reading spreadsheet cells")
-    row = 2
-    rows = []
-    empty_row = False
-    while True:
-        row_data = read_row(sheet, row, langs_count)
-        if len(row_data) == 0:
-            if empty_row:
-                return rows
-            else:
-                empty_row = True
-        else:
-            empty_row = False
-
-        rows.append(row_data)
-        row += 1
-
-
-def save_file(content, dir_name, file_name):
-    log_step("Saving file {}/{}".format(dir_name, file_name))
-    cwd = os.getcwd()
-    try:
-        os.mkdir(dir_name)
-    except Exception:
-        pass
-
-    try:
-        os.chdir(dir_name)
-    except Exception:
-        pass
-
-    file = open(file_name, "w")
-    file.write(content)
-    file.close()
-    os.chdir(cwd)
-
-
-def export_android(languages, strings,
-                   export_path=None,
-                   default_language=SETTINGS_DEFAULT_LANG,
-                   xml_file_name=SETTINGS_DEFAULT_XML_NAME):
-    log_step("Exporting Android strings")
-    cwd = os.getcwd()
-    if export_path:
-        try:
-            os.makedirs(export_path, exist_ok=True)
-        except Exception:
-            pass
-        os.chdir(export_path)
-
-    for i, lang in enumerate(languages):
-        xml = ET.Element('resources')
-        for row in strings:
-            if len(row) == 0:
-                continue
-            string_row = ET.SubElement(xml, 'string')
-            string_row.set('name', row[0])
-            string_row.text = row[i + 1]
-
-        dom = minidom.parseString(ET.tostring(xml, 'utf-8'))
-        pretty_dom = dom.toprettyxml()
-
-        dir_name = "values".format(default_language) if default_language == lang else "values-{}".format(lang)
-        save_file(pretty_dom, dir_name, xml_file_name)
-
-    os.chdir(cwd)
-
-
-def export_ios(languages, strings, export_path=None):
-    log_step("Exporting iOS strings")
-    cwd = os.getcwd()
-    if export_path:
-        try:
-            os.makedirs(export_path, exist_ok=True)
-        except:
-            pass
-
-        os.chdir(export_path)
-
-    for i, lang in enumerate(languages):
-        output = io.StringIO()
-        for row in strings:
-            if len(row) == 0:
-                continue
-            output.write('"{}" = "{}";\n'.format(row[0], row[i + 1]))
-
-        language_dir = "{}.lproj".format(lang)
-        save_file(output.getvalue(), language_dir, "Localizable.strings")
-
-    os.chdir(cwd)
-
-
-def handle_export(mode, gdoc_name):
-    book = gc.open(gdoc_name)
-    sheet = book.sheet1
-
-    languages = load_languages(sheet)
-    strings = read_strings(sheet, len(languages))
-
-    if mode in (Mode.EXPORT_ANDROID, Mode.EXPORT_ALL):
-        export_android(languages,
-                       strings,
-                       settings[SETTINGS_KEY_EXPORT_PATH],
-                       settings[SETTINGS_KEY_DEFAULT_LANG],
-                       settings[SETTINGS_KEY_XML_NAME])
-
-    if mode in (Mode.EXPORT_IOS, Mode.EXPORT_ALL):
-        export_ios(languages, strings, settings[SETTINGS_KEY_EXPORT_PATH])
+# def handle_export(mode, gdoc_name):
+#     book = gc.open(gdoc_name)
+#     sheet = book.sheet1
+#
+#     languages = load_languages(sheet)
+#     strings = read_strings(sheet, len(languages))
+#
+#     if mode in (Mode.EXPORT_ANDROID, Mode.EXPORT_ALL):
+#         export_android(languages,
+#                        strings,
+#                        settings[SETTINGS_KEY_EXPORT_PATH],
+#                        settings[SETTINGS_KEY_DEFAULT_LANG],
+#                        settings[SETTINGS_KEY_XML_NAME])
+#
+#     if mode in (Mode.EXPORT_IOS, Mode.EXPORT_ALL):
+#         export_ios(languages, strings, settings[SETTINGS_KEY_EXPORT_PATH])
 
 
 def main():
+    start_seconds = time.time()
+
     decode_sys_args()
     log_version()
     credentials_location = settings[SETTINGS_KEY_CREDENTIALS_LOCATION]
@@ -529,8 +543,10 @@ def main():
 
     if mode == Mode.IMPORT_ANDROID:
         AndroidProducer().execute()
+
     if mode == Mode.IMPORT_IOS:
         SwiftProducer().execute()
+
     if mode in (Mode.EXPORT_IOS, Mode.EXPORT_ANDROID):
         path = settings[SETTINGS_KEY_EXPORT_PATH]
         xml_name = settings[SETTINGS_KEY_XML_NAME]
@@ -544,7 +560,8 @@ def main():
 
         dictionary = loader.load()
         google_docs_handler.write(google_doc_name, dictionary)
-    log_step("Done")
+
+    log_step("Done (took: {} seconds)".format(int(time.time() - start_seconds)))
 
 
 if __name__ == '__main__':
