@@ -1,0 +1,4 @@
+<resources xmlns:android="http://www.w3.org/1999/xhtml">
+    <string name="hello">Cześć</string>
+    <string name="welcome">Witaj</string>
+</resources>
