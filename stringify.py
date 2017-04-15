@@ -288,6 +288,7 @@ SETTINGS_KEY_CREDENTIALS_LOCATION = "credentials_location"
 SETTINGS_DEFAULT_LANG = "en"
 SETTINGS_DEFAULT_MODE = Mode.EXPORT_ALL
 SETTINGS_DEFAULT_XML_NAME = "strings.xml"
+SETTINGS_DEFAULT_LOCALIZABLE_NAME = "Localizable.strings"
 SETTINGS_DEFAULT_LOGS_ON = True
 
 settings = dict()
@@ -322,7 +323,6 @@ def decode_sys_args():
 
     settings.update({SETTINGS_KEY_DEFAULT_LANG: SETTINGS_DEFAULT_LANG})
     settings.update({SETTINGS_KEY_MODE: SETTINGS_DEFAULT_MODE})
-    settings.update({SETTINGS_KEY_XML_NAME: SETTINGS_DEFAULT_XML_NAME})
     settings.update({SETTINGS_KEY_LOGS_ON: SETTINGS_DEFAULT_LOGS_ON})
     settings.update({SETTINGS_KEY_EXPORT_PATH: '.'})
     settings.update({SETTINGS_KEY_CREDENTIALS_LOCATION: G_FILE})
@@ -549,14 +549,17 @@ def main():
 
     if mode in (Mode.EXPORT_IOS, Mode.EXPORT_ANDROID):
         path = settings[SETTINGS_KEY_EXPORT_PATH]
-        xml_name = settings[SETTINGS_KEY_XML_NAME]
         default_language = settings[SETTINGS_KEY_DEFAULT_LANG]
 
         if mode == Mode.EXPORT_ANDROID:
+            xml_name = settings[SETTINGS_KEY_XML_NAME] if SETTINGS_KEY_XML_NAME in settings.keys() \
+                else SETTINGS_DEFAULT_XML_NAME
             loader = AndroidStringsLoader(path=path, xml_name=xml_name, default_language=default_language)
 
         if mode == Mode.EXPORT_IOS:
-            loader = IOSStringsLoader(path=path, filename=xml_name)
+            filename = settings[SETTINGS_KEY_XML_NAME] if SETTINGS_KEY_XML_NAME in settings.keys() \
+                else SETTINGS_DEFAULT_LOCALIZABLE_NAME
+            loader = IOSStringsLoader(path=path, filename=filename)
 
         dictionary = loader.load()
         google_docs_handler.write(google_doc_name, dictionary)
