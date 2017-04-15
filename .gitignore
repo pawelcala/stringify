@@ -1,0 +1,4 @@
+tests/
+.idea/
+.credentials
+__pycache__/
