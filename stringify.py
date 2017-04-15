@@ -4,11 +4,14 @@
 import time
 import argparse
 import os
+import io
 import re
 import sys
 import xml.etree.ElementTree as ET
 
 # Dependency imports
+from xml.dom import minidom
+
 import gspread
 from oauth2client.client import OAuth2WebServerFlow
 from oauth2client.file import Storage
@@ -302,23 +305,79 @@ class Producer(Command):
 
 
 class AndroidProducer(Producer):
-    def __init__(self, google_doc_handler, google_doc_name):
+    def __init__(self, google_doc_handler, google_doc_name, export_path=".", default_language="en",
+                 xml_name="strings.xml"):
+
+        self.xml_name = xml_name
+        self.default_language = default_language
+        self.export_path = export_path
         self.google_doc_name = google_doc_name
         self.google_doc_handler = google_doc_handler
 
     def execute(self):
         dictionary = self.google_doc_handler.read(self.google_doc_name)
-        dir(dictionary)
+        self._export(dictionary)
+
+    def _export(self, dictionary):
+        log_step("Exporting Android strings")
+        cwd = os.getcwd()
+        if self.export_path:
+            try:
+                os.makedirs(self.export_path, exist_ok=True)
+            except Exception:
+                pass
+            os.chdir(self.export_path)
+
+        for i, lang in enumerate(dictionary.languages):
+            xml = ET.Element('resources')
+            for key in dictionary.keys():
+                value = dictionary.get_translation(key, lang)
+                string_row = ET.SubElement(xml, 'string')
+                string_row.set('name', key)
+                string_row.text = value
+
+            dom = minidom.parseString(ET.tostring(xml, 'utf-8'))
+            pretty_dom = dom.toprettyxml()
+
+            dir_name = "values".format(self.default_language) if self.default_language == lang else "values-{}".format(
+                lang)
+            save_file(pretty_dom, dir_name, self.xml_name)
+
+        os.chdir(cwd)
 
 
 class SwiftProducer(Producer):
-    def __init__(self, google_doc_handler, google_doc_name):
+    def __init__(self, google_doc_handler, google_doc_name, export_path=".", filename="Localizable.strings"):
+        self.filename = filename
+        self.export_path = export_path
         self.google_doc_name = google_doc_name
         self.google_doc_handler = google_doc_handler
 
     def execute(self):
         dictionary = self.google_doc_handler.read(self.google_doc_name)
-        dir(dictionary)
+        self._export(dictionary)
+
+    def _export(self, dictionary):
+        log_step("Exporting iOS strings")
+        cwd = os.getcwd()
+        if self.export_path:
+            try:
+                os.makedirs(self.export_path, exist_ok=True)
+            except:
+                pass
+
+            os.chdir(self.export_path)
+
+        for i, lang in enumerate(dictionary.languages):
+            output = io.StringIO()
+            for key in dictionary.keys():
+                value = dictionary.get_translation(key, lang)
+                output.write('"{}" = "{}";\n'.format(key, value))
+
+            language_dir = "{}.lproj".format(lang)
+            save_file(output.getvalue(), language_dir, self.filename)
+
+        os.chdir(cwd)
 
 
 APP_NAME = "stringify"
@@ -441,99 +500,23 @@ def find_files(path='.', filename_regex=None):
     return found_files
 
 
-#
+def save_file(content, dir_name, file_name):
+    log_step("Saving file {}/{}".format(dir_name, file_name))
+    cwd = os.getcwd()
+    try:
+        os.mkdir(dir_name)
+    except Exception:
+        pass
 
-#
-# def save_file(content, dir_name, file_name):
-#     log_step("Saving file {}/{}".format(dir_name, file_name))
-#     cwd = os.getcwd()
-#     try:
-#         os.mkdir(dir_name)
-#     except Exception:
-#         pass
-#
-#     try:
-#         os.chdir(dir_name)
-#     except Exception:
-#         pass
-#
-#     file = open(file_name, "w")
-#     file.write(content)
-#     file.close()
-#     os.chdir(cwd)
+    try:
+        os.chdir(dir_name)
+    except Exception:
+        pass
 
-#
-# def export_android(languages, strings,
-#                    export_path=None,
-#                    default_language=SETTINGS_DEFAULT_LANG,
-#                    xml_file_name=SETTINGS_DEFAULT_XML_NAME):
-#     log_step("Exporting Android strings")
-#     cwd = os.getcwd()
-#     if export_path:
-#         try:
-#             os.makedirs(export_path, exist_ok=True)
-#         except Exception:
-#             pass
-#         os.chdir(export_path)
-#
-#     for i, lang in enumerate(languages):
-#         xml = ET.Element('resources')
-#         for row in strings:
-#             if len(row) == 0:
-#                 continue
-#             string_row = ET.SubElement(xml, 'string')
-#             string_row.set('name', row[0])
-#             string_row.text = row[i + 1]
-#
-#         dom = minidom.parseString(ET.tostring(xml, 'utf-8'))
-#         pretty_dom = dom.toprettyxml()
-#
-#         dir_name = "values".format(default_language) if default_language == lang else "values-{}".format(lang)
-#         save_file(pretty_dom, dir_name, xml_file_name)
-#
-#     os.chdir(cwd)
-
-#
-# def export_ios(languages, strings, export_path=None):
-#     log_step("Exporting iOS strings")
-#     cwd = os.getcwd()
-#     if export_path:
-#         try:
-#             os.makedirs(export_path, exist_ok=True)
-#         except:
-#             pass
-#
-#         os.chdir(export_path)
-#
-#     for i, lang in enumerate(languages):
-#         output = io.StringIO()
-#         for row in strings:
-#             if len(row) == 0:
-#                 continue
-#             output.write('"{}" = "{}";\n'.format(row[0], row[i + 1]))
-#
-#         language_dir = "{}.lproj".format(lang)
-#         save_file(output.getvalue(), language_dir, "Localizable.strings")
-#
-#     os.chdir(cwd)
-
-
-# def handle_export(mode, gdoc_name):
-#     book = gc.open(gdoc_name)
-#     sheet = book.sheet1
-#
-#     languages = load_languages(sheet)
-#     strings = read_strings(sheet, len(languages))
-#
-#     if mode in (Mode.EXPORT_ANDROID, Mode.EXPORT_ALL):
-#         export_android(languages,
-#                        strings,
-#                        settings[SETTINGS_KEY_EXPORT_PATH],
-#                        settings[SETTINGS_KEY_DEFAULT_LANG],
-#                        settings[SETTINGS_KEY_XML_NAME])
-#
-#     if mode in (Mode.EXPORT_IOS, Mode.EXPORT_ALL):
-#         export_ios(languages, strings, settings[SETTINGS_KEY_EXPORT_PATH])
+    file = open(file_name, "w")
+    file.write(content)
+    file.close()
+    os.chdir(cwd)
 
 
 def main():
@@ -549,10 +532,25 @@ def main():
     google_docs_handler = GoogleDocsHandler(credentials_location)
 
     if mode == Mode.IMPORT_ANDROID:
-        AndroidProducer(google_docs_handler, google_doc_name).execute()
+        export_path = settings[SETTINGS_KEY_EXPORT_PATH]
+        default_language = settings[SETTINGS_KEY_DEFAULT_LANG]
+
+        filename = settings[
+            SETTINGS_KEY_XML_NAME] if SETTINGS_KEY_XML_NAME in settings.keys() else SETTINGS_DEFAULT_XML_NAME
+
+        AndroidProducer(google_docs_handler, google_doc_name,
+                        export_path=export_path,
+                        xml_name=filename,
+                        default_language=default_language).execute()
 
     if mode == Mode.IMPORT_IOS:
-        SwiftProducer(google_docs_handler, google_doc_name).execute()
+        export_path = settings[SETTINGS_KEY_EXPORT_PATH]
+        filename = settings[
+            SETTINGS_KEY_XML_NAME] if SETTINGS_DEFAULT_XML_NAME in settings.keys() else SETTINGS_DEFAULT_LOCALIZABLE_NAME
+
+        SwiftProducer(google_docs_handler, google_doc_name,
+                      export_path=export_path,
+                      filename=filename).execute()
 
     if mode in (Mode.EXPORT_IOS, Mode.EXPORT_ANDROID):
         path = settings[SETTINGS_KEY_EXPORT_PATH]
