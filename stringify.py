@@ -152,7 +152,14 @@ class GoogleDocsHandler(Command):
         worksheet = self._get_worksheet(google_doc_name)
         languages = self._load_languages(worksheet)
         entries = self._read_strings(worksheet, len(languages))
-        pass
+        dictionary = Dictionary()
+
+        for i, lang in enumerate(languages):
+            for row in entries:
+                if len(row) == 0:
+                    continue
+                dictionary.add_translation(row[0], lang, row[i + 1])
+        return dictionary
 
     def _clear_worksheet(self, spreadsheet):
         '''This is way more efficient than worksheet.clear() method'''
@@ -160,7 +167,6 @@ class GoogleDocsHandler(Command):
         for cell in cells:
             cell.value = ""
         spreadsheet.update_cells(cells)
-
 
     def _load_languages(self, sheet):
         log_step("Reading languages")
@@ -174,7 +180,6 @@ class GoogleDocsHandler(Command):
             else:
                 return languages
 
-
     def _read_row(self, sheet, row, langs_count):
         row_data = list()
         for column in range(1, langs_count + 2):
@@ -184,7 +189,6 @@ class GoogleDocsHandler(Command):
             else:
                 row_data.append(cell_value)
         return row_data
-
 
     def _read_strings(self, sheet, langs_count):
         log_step("Reading spreadsheet cells")
@@ -298,19 +302,23 @@ class Producer(Command):
 
 
 class AndroidProducer(Producer):
-    def __init__(self, parser):
-        pass
+    def __init__(self, google_doc_handler, google_doc_name):
+        self.google_doc_name = google_doc_name
+        self.google_doc_handler = google_doc_handler
 
     def execute(self):
-        pass
+        dictionary = self.google_doc_handler.read(self.google_doc_name)
+        dir(dictionary)
 
 
 class SwiftProducer(Producer):
-    def __init__(self, parser):
-        pass
+    def __init__(self, google_doc_handler, google_doc_name):
+        self.google_doc_name = google_doc_name
+        self.google_doc_handler = google_doc_handler
 
     def execute(self):
-        pass
+        dictionary = self.google_doc_handler.read(self.google_doc_name)
+        dir(dictionary)
 
 
 APP_NAME = "stringify"
@@ -541,10 +549,10 @@ def main():
     google_docs_handler = GoogleDocsHandler(credentials_location)
 
     if mode == Mode.IMPORT_ANDROID:
-        AndroidProducer().execute()
+        AndroidProducer(google_docs_handler, google_doc_name).execute()
 
     if mode == Mode.IMPORT_IOS:
-        SwiftProducer().execute()
+        SwiftProducer(google_docs_handler, google_doc_name).execute()
 
     if mode in (Mode.EXPORT_IOS, Mode.EXPORT_ANDROID):
         path = settings[SETTINGS_KEY_EXPORT_PATH]
