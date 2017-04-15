@@ -8,7 +8,6 @@ import re
 import sys
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
-from enum import Enum
 
 # Dependency imports
 import gspread
@@ -20,12 +19,12 @@ class NotFoundException(Exception):
     pass
 
 
-class Mode(Enum):
-    EXPORT_ALL = 0
-    EXPORT_ANDROID = 1
-    EXPORT_IOS = 2
-    IMPORT_ANDROID = 3
-    IMPORT_IOS = 4
+class Mode:
+    EXPORT_ALL = "export_all"
+    EXPORT_ANDROID = "export_android"
+    EXPORT_IOS = "export_ios"
+    IMPORT_ANDROID = "import_android"
+    IMPORT_IOS = "import_ios"
 
 
 class TranslationRow:
@@ -60,16 +59,116 @@ class Dictionary:
     def keys_iterator(self):
         return self.dictionary
 
+    def keys(self):
+        return self.dictionary.keys()
+
 
 # CONTENT PARSERS
 
-class DataLoader:
-    def load(self):
+class Command:
+    def execute(self):
+        pass
+
+
+class GoogleDocsHandler(Command):
+    def __init__(self, credentials_path):
+        self.client = None
+        self.credentials_path = credentials_path
+
+    def _oauth_load_credentials(self):
+        log_step("Loading saved credentials")
+        if os.path.isfile(settings[SETTINGS_KEY_CREDENTIALS_LOCATION]):
+            try:
+                storage = Storage(settings[SETTINGS_KEY_CREDENTIALS_LOCATION])
+                return storage.locked_get()
+            except:
+                return None
+        return None
+
+    def _oauth_save_credentials(self, credentials):
+        log_step("Saving credentials")
+        storage = Storage(G_FILE)
+        storage.locked_put(credentials)
+
+    def _oauth(self):
+        log_step("Authorizing user")
+        credentials = self._oauth_load_credentials()
+        if credentials:
+            return credentials
+        else:
+            flow = OAuth2WebServerFlow(client_id=G_CLIENT_ID,
+                                       client_secret=G_CLIENT_SECRET,
+                                       scope=G_SCOPE,
+                                       redirect_uri=G_REDIRECT)
+            auth_uri = flow.step1_get_authorize_url()
+            print(auth_uri)
+            code = input("Enter code:")
+            credentials = flow.step2_exchange(code)
+            self._oauth_save_credentials(credentials)
+            return credentials
+
+    def authorize(self):
+        if not self.client:
+            credentials = self._oauth()
+            self.client = gspread.authorize(credentials)
+        return self.client
+
+    def write(self, google_doc_name, dictionary):
+        google_doc_client = self.authorize()
+        try:
+            spreadsheet = google_doc_client.open(google_doc_name).sheet1
+        except gspread.SpreadsheetNotFound:
+            spreadsheet = google_doc_client.create(google_doc_name).sheet1
+
+        log_step("Clear spreadsheet...")
+        self._clear_worksheet(spreadsheet)
+        log_step("Writing cells...")
+
+        row = 1
+        languages = dictionary.languages
+        languages = sorted(languages)
+        for index, lang in enumerate(languages):
+            column = index + 2
+            log_step("language ({}{}): {}".format(row, column, lang))
+            spreadsheet.update_cell(row, column, lang)
+
+        row = 2
+        for key in dictionary.keys():
+            spreadsheet.update_cell(row, 1, key)
+            for index, lang in enumerate(languages):
+                column = index + 2
+                translated_value = dictionary.get_translation(key, lang)
+                spreadsheet.update_cell(row, column, translated_value)
+                log_step("cell ({}{}): {}".format(row, column, translated_value))
+            row += 1
+
+    def read(self, google_doc_name):
+        pass
+
+    def _clear_worksheet(self, spreadsheet):
+        '''This is way more efficient than worksheet.clear() method'''
+        cells = spreadsheet.findall(re.compile(".+"))
+        for cell in cells:
+            cell.value = ""
+
+        spreadsheet.update_cells(cells)
+
+
+class DataLoader(Command):
+    def execute(self):
         raise NotImplemented
+
+    def load(self):
+        return self.execute()
 
 
 class GoogleDocDataLoader(DataLoader):
-    def load(self):
+    def __init__(self, google_docs):
+        self.sheet = google_docs.sheet1
+
+        pass
+
+    def execute(self):
         pass
 
 
@@ -77,9 +176,9 @@ class AndroidStringsLoader(DataLoader):
     def __init__(self, path, **kwargs):
         self.path = path
         self.filename = kwargs['xml_name'] if 'xml_name' in kwargs.keys() else 'strings.xml'
-        self.default_language = kwargs['default'] if 'default' in kwargs.keys() else 'en'
+        self.default_language = kwargs['default_language'] if 'default_language' in kwargs.keys() else 'en'
 
-    def load(self):
+    def execute(self):
         file_paths = find_files(path=self.path, filename_regex=self.filename)
         dictionary = Dictionary()
         for filepath in file_paths:
@@ -91,8 +190,7 @@ class AndroidStringsLoader(DataLoader):
 
             for entry in entries:
                 dictionary.add_translation(entry[0], language, entry[1])
-
-        print(dictionary)
+        return dictionary
 
     def _decode_filepath_language(self, filepath):
         match = re.match(r'.*values([-a-z]{0,3})', filepath)
@@ -118,7 +216,7 @@ class IOSStringsLoader(DataLoader):
         self.path = path
         self.filename = kwargs['filename'] if 'filename' in kwargs.keys() else 'Localizable.strings'
 
-    def load(self):
+    def execute(self):
         filepaths = find_files(path=self.path, filename_regex=self.filename)
         dictionary = Dictionary()
 
@@ -153,8 +251,8 @@ class IOSStringsLoader(DataLoader):
 
 
 # PRODUCERS
-class Producer:
-    def produce(self):
+class Producer(Command):
+    def execute(self):
         pass
 
 
@@ -162,9 +260,15 @@ class AndroidProducer(Producer):
     def __init__(self, parser):
         pass
 
+    def execute(self):
+        pass
+
 
 class SwiftProducer(Producer):
     def __init__(self, parser):
+        pass
+
+    def execute(self):
         pass
 
 
@@ -177,22 +281,18 @@ SETTINGS_KEY_EXPORT_PATH = "locale"
 SETTINGS_KEY_XML_NAME = "xml_name"
 SETTINGS_KEY_MODE = "mode"
 SETTINGS_KEY_LOGS_ON = "logs_on"
+SETTINGS_KEY_CREDENTIALS_LOCATION = "credentials_location"
 
 SETTINGS_DEFAULT_LANG = "en"
-SETTINGS_DEFAULT_MODE = Mode.EXPORT_ALL.name
+SETTINGS_DEFAULT_MODE = Mode.EXPORT_ALL
 SETTINGS_DEFAULT_XML_NAME = "strings.xml"
 SETTINGS_DEFAULT_LOGS_ON = True
 
 settings = dict()
-settings.update({SETTINGS_KEY_DEFAULT_LANG: SETTINGS_DEFAULT_LANG})
-settings.update({SETTINGS_KEY_MODE: SETTINGS_DEFAULT_MODE})
-settings.update({SETTINGS_KEY_XML_NAME: SETTINGS_DEFAULT_XML_NAME})
-settings.update({SETTINGS_KEY_LOGS_ON: SETTINGS_DEFAULT_LOGS_ON})
-settings.update({SETTINGS_KEY_EXPORT_PATH: None})
 
-G_CLIENT_ID = 'GOOGLE API CONSOLE ID'
-G_CLIENT_SECRET = 'GOOGLE API CONSOLE SECRET'
-G_SCOPE = 'https://spreadsheets.google.com/feeds'
+G_CLIENT_ID = '463196519538-07lgrq1rim3mie9p8tnc9rl06o18di9g.apps.googleusercontent.com'
+G_CLIENT_SECRET = 'Je8slGzLy8kVUXRHcN5fXCJ2'
+G_SCOPE = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
 G_REDIRECT = 'http://localhost/'
 G_FILE = ".credentials"
 
@@ -216,8 +316,14 @@ def log_version():
 
 
 def decode_sys_args():
-    log_step("Decoding script arguments")
     global settings
+
+    settings.update({SETTINGS_KEY_DEFAULT_LANG: SETTINGS_DEFAULT_LANG})
+    settings.update({SETTINGS_KEY_MODE: SETTINGS_DEFAULT_MODE})
+    settings.update({SETTINGS_KEY_XML_NAME: SETTINGS_DEFAULT_XML_NAME})
+    settings.update({SETTINGS_KEY_LOGS_ON: SETTINGS_DEFAULT_LOGS_ON})
+    settings.update({SETTINGS_KEY_EXPORT_PATH: '.'})
+    settings.update({SETTINGS_KEY_CREDENTIALS_LOCATION: G_FILE})
 
     parser = argparse.ArgumentParser(description='Stringify parser')
     parser.add_argument("-d", "--default-lang", help="Android default language")
@@ -226,18 +332,18 @@ def decode_sys_args():
     parser.add_argument("-x", "--xml-filename", help="Android xml name. Default: strings.xml")
     parser.add_argument("-m", "--mode",
                         help="Available modes: "
-                             "EXPORT_IOS - exports ios strings,\n"
-                             "EXPORT_ANDROID - exports android strings,\n"
-                             "IMPORT_ANDROID - import Android strings and create Google Spreadsheet,\n"
-                             "IMPORT_IOS - import iOS strings and create Google Spreadsheet,\n"
-                             "EXPORT_ALL (default) - exports both Android and iOS\n")
+                             "export_ios - exports ios strings,\n"
+                             "export_android - exports android strings,\n"
+                             "import_android - import Android strings and create Google Spreadsheet,\n"
+                             "import_ios - import iOS strings and create Google Spreadsheet,\n"
+                             "export_all (default) - exports both Android and iOS\n")
     parser.add_argument("-o", "--logs-off", help="Turns progress logs off")
     parser.add_argument("-u", "--oauth-credentials-location", help="Directory to save/load oauth credentials")
 
     args = parser.parse_args()
 
     if args.mode:
-        settings.update({SETTINGS_KEY_MODE: args.mode})
+        settings.update({SETTINGS_KEY_MODE: args.mode.lower()})
 
     if args.spreadsheet_name:
         settings.update({SETTINGS_KEY_GDOC_NAME: args.spreadsheet_name})
@@ -247,14 +353,17 @@ def decode_sys_args():
     if args.default_lang:
         settings.update({SETTINGS_KEY_DEFAULT_LANG: args.default_lang})
 
-    if args.export_path:
-        settings.update({SETTINGS_KEY_EXPORT_PATH: args.export_path})
+    if args.dest_path:
+        settings.update({SETTINGS_KEY_EXPORT_PATH: args.dest_path})
 
-    if args.export_xml_name:
-        settings.update({SETTINGS_KEY_XML_NAME: args.export_xml_name})
+    if args.xml_filename:
+        settings.update({SETTINGS_KEY_XML_NAME: args.xml_filename})
 
     if args.logs_off:
         settings.update({SETTINGS_KEY_LOGS_ON, False})
+
+    if args.oauth_credentials_location:
+        settings.update({SETTINGS_KEY_CREDENTIALS_LOCATION: args.oauth_credentials_location})
 
 
 # todo use os.walk instead?
@@ -272,40 +381,6 @@ def find_files(path='.', filename_regex=None):
                 found_files.append(filepath)
 
     return found_files
-
-
-def oauth_load_credentials():
-    log_step("Loading saved credentials")
-    try:
-        storage = Storage(G_FILE)
-        return storage.locked_get()
-    except Exception:
-        log_step("No saved credentials")
-        return None
-
-
-def oauth_save_credentials(credentials):
-    log_step("Saving credentials")
-    storage = Storage(G_FILE)
-    storage.locked_put(credentials)
-
-
-def oauth():
-    log_step("Authorizing user")
-    credentials = oauth_load_credentials()
-    if credentials:
-        return credentials
-    else:
-        flow = OAuth2WebServerFlow(client_id=G_CLIENT_ID,
-                                   client_secret=G_CLIENT_SECRET,
-                                   scope=G_SCOPE,
-                                   redirect_uri=G_REDIRECT)
-        auth_uri = flow.step1_get_authorize_url()
-        print(auth_uri)
-        code = input("Enter code:")
-        credentials = flow.step2_exchange(code)
-        oauth_save_credentials(credentials)
-        return credentials
 
 
 def load_languages(sheet):
@@ -432,35 +507,45 @@ def handle_export(mode, gdoc_name):
     languages = load_languages(sheet)
     strings = read_strings(sheet, len(languages))
 
-    if mode in (Mode.EXPORT_ANDROID.name, Mode.EXPORT_ALL.name):
+    if mode in (Mode.EXPORT_ANDROID, Mode.EXPORT_ALL):
         export_android(languages,
                        strings,
                        settings[SETTINGS_KEY_EXPORT_PATH],
                        settings[SETTINGS_KEY_DEFAULT_LANG],
                        settings[SETTINGS_KEY_XML_NAME])
 
-    if mode in (Mode.EXPORT_IOS.name, Mode.EXPORT_ALL.name):
+    if mode in (Mode.EXPORT_IOS, Mode.EXPORT_ALL):
         export_ios(languages, strings, settings[SETTINGS_KEY_EXPORT_PATH])
 
 
-if __name__ == '__main__':
-    log_version()
+def main():
     decode_sys_args()
+    log_version()
+    credentials_location = settings[SETTINGS_KEY_CREDENTIALS_LOCATION]
+    mode = settings[SETTINGS_KEY_MODE]
 
-    credentials = oauth()
-    gc = gspread.authorize(credentials)
+    google_doc_name = settings[SETTINGS_KEY_GDOC_NAME]
+    google_docs_handler = GoogleDocsHandler(credentials_location)
 
-    script_mode = settings[SETTINGS_KEY_MODE]
-    gdoc_name = settings[SETTINGS_KEY_GDOC_NAME]
+    if mode == Mode.IMPORT_ANDROID:
+        AndroidProducer().execute()
+    if mode == Mode.IMPORT_IOS:
+        SwiftProducer().execute()
+    if mode in (Mode.EXPORT_IOS, Mode.EXPORT_ANDROID):
+        path = settings[SETTINGS_KEY_EXPORT_PATH]
+        xml_name = settings[SETTINGS_KEY_XML_NAME]
+        default_language = settings[SETTINGS_KEY_DEFAULT_LANG]
 
-    if script_mode in (Mode.EXPORT_ALL.name, Mode.EXPORT_ANDROID.name, Mode.EXPORT_IOS.name):
-        handle_export(script_mode, gdoc_name)
+        if mode == Mode.EXPORT_ANDROID:
+            loader = AndroidStringsLoader(path=path, xml_name=xml_name, default_language=default_language)
 
-    if script_mode == Mode.IMPORT_ANDROID.name:
-        AndroidStringsLoader()
-        pass
+        if mode == Mode.EXPORT_IOS:
+            loader = IOSStringsLoader(path=path, filename=xml_name)
 
-    if script_mode == Mode.IMPORT_IOS.name:
-        pass
-
+        dictionary = loader.load()
+        google_docs_handler.write(google_doc_name, dictionary)
     log_step("Done")
+
+
+if __name__ == '__main__':
+    main()
