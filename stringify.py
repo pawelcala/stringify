@@ -4,6 +4,7 @@
 import argparse
 import io
 import os
+import re
 import sys
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
@@ -44,7 +45,7 @@ class Dictionary:
         self.dictionary = dict()
         self.languages = set()
 
-    def add_translation(self, key, lang, word):
+    def add_translation(self, key, lang, word, comment=None):
         self.languages.add(lang)
         translation_row = self.dictionary.get(key)
         if translation_row is None:
@@ -62,13 +63,58 @@ class Dictionary:
 
 # CONTENT PARSERS
 
-class Parser:
-    def parse(self, source):
+class DataLoader:
+    def load(self):
         raise NotImplemented
 
 
-class GoogleDocParser(Parser):
-    def parse(self, source):
+class GoogleDocDataLoader(DataLoader):
+    def load(self):
+        pass
+
+
+class AndroidStringsLoader(DataLoader):
+    def __init__(self, **kwargs):
+        self.path = kwargs['path']
+        self.xml_name = kwargs['xml_name'] if 'xml_name' in kwargs.keys() else 'strings.xml'
+        self.default_language = kwargs['default'] if 'default' in kwargs.keys() else 'en'
+
+    def load(self):
+        file_paths = find_files(path=self.path, filename_regex=self.xml_name)
+        dictionary = Dictionary()
+        for filepath in file_paths:
+            language = self._decode_filepath_language(filepath)
+            entries = self._decode_file_entries(filepath)
+
+            if len(language.strip()) == 0:
+                language = self.default_language
+
+            for entry in entries:
+                dictionary.add_translation(entry[0], language, entry[1])
+
+        print(dictionary)
+
+    def _decode_filepath_language(self, filepath):
+        match = re.match(r'.*values([-a-z]{0,3})', filepath)
+        if match:
+            postfix = match.group(1)
+            if len(postfix) == 3:
+                postfix = postfix[-2:]
+        return postfix
+
+    def _decode_file_entries(self, filepath):
+        entries = []
+        xml = ET.parse(filepath)
+        root = xml.getroot()
+        for child in root:
+            key = child.get('name')
+            value = child.text
+            entries.append((key, value))
+        return entries
+
+
+class IOSStringsLoader(DataLoader):
+    def load(self):
         pass
 
 
@@ -89,7 +135,7 @@ class SwiftProducer(Producer):
 
 
 APP_NAME = "stringify"
-APP_VERSION = "0.0.2"
+APP_VERSION = "0.0.3"
 
 SETTINGS_KEY_GDOC_NAME = "spreadsheet_name"
 SETTINGS_KEY_DEFAULT_LANG = "default_language"
@@ -142,8 +188,8 @@ def decode_sys_args():
     parser = argparse.ArgumentParser(description='Stringify parser')
     parser.add_argument("-d", "--default-lang", help="Android default language")
     parser.add_argument("-n", "--spreadsheet-name", help="Google Spreadsheet name")
-    parser.add_argument("-p", "--export-path", help="Localized strings destination path")
-    parser.add_argument("-x", "--export-xml-name", help="Android xml name. Default: strings.xml")
+    parser.add_argument("-p", "--dest-path", help="Localized strings destination path")
+    parser.add_argument("-x", "--xml-filename", help="Android xml name. Default: strings.xml")
     parser.add_argument("-m", "--mode",
                         help="Available modes: "
                              "EXPORT_IOS - exports ios strings,\n"
@@ -152,6 +198,7 @@ def decode_sys_args():
                              "IMPORT_IOS - import iOS strings and create Google Spreadsheet,\n"
                              "EXPORT_ALL (default) - exports both Android and iOS\n")
     parser.add_argument("-o", "--logs-off", help="Turns progress logs off")
+    parser.add_argument("-u", "--oauth-credentials-location", help="Directory to save/load oauth credentials")
 
     args = parser.parse_args()
 
@@ -176,7 +223,7 @@ def decode_sys_args():
         settings.update({SETTINGS_KEY_LOGS_ON, False})
 
 
-#todo use os.walk instead?
+# todo use os.walk instead?
 def find_files(path='.', filename_regex=None):
     found_files = []
     for filename in os.listdir(path):
@@ -374,7 +421,12 @@ if __name__ == '__main__':
 
     if script_mode in (Mode.EXPORT_ALL.name, Mode.EXPORT_ANDROID.name, Mode.EXPORT_IOS.name):
         handle_export(script_mode, gdoc_name)
-    if script_mode in (Mode.IMPORT_ANDROID.name, Mode.IMPORT_IOS.name):
-        raise NotImplemented
+
+    if script_mode == Mode.IMPORT_ANDROID.name:
+        AndroidStringsLoader()
+        pass
+
+    if script_mode == Mode.IMPORT_IOS.name:
+        pass
 
     log_step("Done")
