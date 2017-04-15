@@ -113,14 +113,10 @@ class GoogleDocsHandler(Command):
         return self.client
 
     def write(self, google_doc_name, dictionary):
-        google_doc_client = self.authorize()
-        try:
-            spreadsheet = google_doc_client.open(google_doc_name).sheet1
-        except gspread.SpreadsheetNotFound:
-            spreadsheet = google_doc_client.create(google_doc_name).sheet1
+        worksheet = self._get_worksheet(google_doc_name)
 
         log_step("Clear spreadsheet...")
-        self._clear_worksheet(spreadsheet)
+        self._clear_worksheet(worksheet)
         log_step("Writing cells...")
 
         row = 1
@@ -128,23 +124,34 @@ class GoogleDocsHandler(Command):
         languages = sorted(languages)
         for index, lang in enumerate(languages):
             column = index + 2
-            spreadsheet.update_cell(row, column, lang)
+            worksheet.update_cell(row, column, lang)
 
         row = 2
         for key in dictionary.keys():
-            spreadsheet.update_cell(row, 1, key)
+            worksheet.update_cell(row, 1, key)
             cells = []
             for index, lang in enumerate(languages):
                 column = index + 2
                 translated_value = dictionary.get_translation(key, lang)
-                cell = spreadsheet.cell(row, column)
+                cell = worksheet.cell(row, column)
                 cell.value = translated_value
                 cells.append(cell)
             row += 1
 
-            spreadsheet.update_cells(cells)
+            worksheet.update_cells(cells)
+
+    def _get_worksheet(self, google_doc_name):
+        google_doc_client = self.authorize()
+        try:
+            spreadsheet = google_doc_client.open(google_doc_name).sheet1
+        except gspread.SpreadsheetNotFound:
+            spreadsheet = google_doc_client.create(google_doc_name).sheet1
+        return spreadsheet
 
     def read(self, google_doc_name):
+        worksheet = self._get_worksheet(google_doc_name)
+        languages = self._load_languages(worksheet)
+        entries = self._read_strings(worksheet, len(languages))
         pass
 
     def _clear_worksheet(self, spreadsheet):
@@ -152,8 +159,50 @@ class GoogleDocsHandler(Command):
         cells = spreadsheet.findall(re.compile(".+"))
         for cell in cells:
             cell.value = ""
-
         spreadsheet.update_cells(cells)
+
+
+    def _load_languages(self, sheet):
+        log_step("Reading languages")
+        column = 2
+        languages = []
+        while True:
+            lang_code = sheet.cell(1, column).value
+            if len(lang_code.strip()) > 0:
+                languages.append(lang_code)
+                column += 1
+            else:
+                return languages
+
+
+    def _read_row(self, sheet, row, langs_count):
+        row_data = list()
+        for column in range(1, langs_count + 2):
+            cell_value = sheet.cell(row, column).value
+            if len(cell_value.strip()) == 0 and column == 1:
+                return row_data
+            else:
+                row_data.append(cell_value)
+        return row_data
+
+
+    def _read_strings(self, sheet, langs_count):
+        log_step("Reading spreadsheet cells")
+        row = 2
+        rows = []
+        empty_row = False
+        while True:
+            row_data = self._read_row(sheet, row, langs_count)
+            if len(row_data) == 0:
+                if empty_row:
+                    return rows
+                else:
+                    empty_row = True
+            else:
+                empty_row = False
+
+            rows.append(row_data)
+            row += 1
 
 
 class DataLoader(Command):
@@ -162,16 +211,6 @@ class DataLoader(Command):
 
     def load(self):
         return self.execute()
-
-
-class GoogleDocDataLoader(DataLoader):
-    def __init__(self, google_docs):
-        self.sheet = google_docs.sheet1
-
-        pass
-
-    def execute(self):
-        pass
 
 
 class AndroidStringsLoader(DataLoader):
@@ -395,47 +434,6 @@ def find_files(path='.', filename_regex=None):
 
 
 #
-# def load_languages(sheet):
-#     log_step("Reading languages")
-#     column = 2
-#     languages = []
-#     while True:
-#         lang_code = sheet.cell(1, column).value
-#         if len(lang_code.strip()) > 0:
-#             languages.append(lang_code)
-#             column += 1
-#         else:
-#             return languages
-#
-#
-# def read_row(sheet, row, langs_count):
-#     row_data = list()
-#     for column in range(1, langs_count + 2):
-#         cell_value = sheet.cell(row, column).value
-#         if len(cell_value.strip()) == 0 and column == 1:
-#             return row_data
-#         else:
-#             row_data.append(cell_value)
-#     return row_data
-#
-#
-# def read_strings(sheet, langs_count):
-#     log_step("Reading spreadsheet cells")
-#     row = 2
-#     rows = []
-#     empty_row = False
-#     while True:
-#         row_data = read_row(sheet, row, langs_count)
-#         if len(row_data) == 0:
-#             if empty_row:
-#                 return rows
-#             else:
-#                 empty_row = True
-#         else:
-#             empty_row = False
-#
-#         rows.append(row_data)
-#         row += 1
 
 #
 # def save_file(content, dir_name, file_name):
@@ -535,6 +533,7 @@ def main():
 
     decode_sys_args()
     log_version()
+
     credentials_location = settings[SETTINGS_KEY_CREDENTIALS_LOCATION]
     mode = settings[SETTINGS_KEY_MODE]
 
