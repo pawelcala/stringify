@@ -246,6 +246,8 @@ class AndroidStringsLoader(DataLoader):
             postfix = match.group(1)
             if len(postfix) == 3:
                 postfix = postfix[-2:]
+            else:
+                postfix = self.default_language
         return postfix
 
     def _decode_file_entries(self, filepath):

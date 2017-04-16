@@ -35,5 +35,22 @@ class DictionaryTests(unittest.TestCase):
         self.assertEqual(2, len(dictionary.keys()))
         self.assertEqual(2, len(dictionary.languages))
 
+
+class AndroidStringsLoaderTests(unittest.TestCase):
+    paths_with_languages = list()
+    paths_with_languages.append(('/resources/values-pl/strings.xml', 'pl'))
+    paths_with_languages.append(('/resources/values-en/strings.xml', 'en'))
+    paths_with_languages.append(('/resources/test/temp_dir/values-en/strings.xml', 'en'))
+    paths_with_languages.append(('values-en/strings.xml', 'en'))
+    paths_with_languages.append(('resources/values/strings.xml', 'en'))
+
+    def test_decode_file_path_language(self):
+        android_strings_loader = stringify.AndroidStringsLoader("/")
+        for case in self.paths_with_languages:
+            path = case[0]
+            language = case[1]
+            self.assertEqual(language, android_strings_loader._decode_filepath_language(path))
+
+
 if __name__ == '__main__':
     unittest.main()
