@@ -52,5 +52,18 @@ class AndroidStringsLoaderTests(unittest.TestCase):
             self.assertEqual(language, android_strings_loader._decode_filepath_language(path))
 
 
+class IOSStringsLoaderTests(unittest.TestCase):
+    paths_with_languages = list()
+    paths_with_languages.append(('/resources/pl.lproj/Localizable.strings', 'pl'))
+    paths_with_languages.append(('/resources/en.lproj/Localizable.strings', 'en'))
+
+    def test_decode_file_path_language(self):
+        ios_strings_loader = stringify.IOSStringsLoader("/")
+        for case in self.paths_with_languages:
+            path = case[0]
+            language = case[1]
+            self.assertEqual(language, ios_strings_loader._decode_filepath_language(path))
+
+
 if __name__ == '__main__':
     unittest.main()
