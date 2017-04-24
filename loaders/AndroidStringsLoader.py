@@ -41,7 +41,8 @@ class AndroidStringsLoader(DataLoader):
         xml = ET.parse(filepath)
         root = xml.getroot()
         for child in root:
-            key = child.get('name')
-            value = child.text
-            entries.append((key, value))
+            if child.tag == 'string':
+                key = child.get('name')
+                value = child.text
+                entries.append((key, value))
         return entries
