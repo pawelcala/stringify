@@ -4,6 +4,7 @@ import unittest
 from loaders.AndroidStringsLoader import AndroidStringsLoader
 from loaders.IosStringsLoader import IOSStringsLoader
 from model.Models import Dictionary
+from utils import cell_decorator
 
 
 class DictionaryTests(unittest.TestCase):
@@ -67,6 +68,17 @@ class IOSStringsLoaderTests(unittest.TestCase):
             path = case[0]
             language = case[1]
             self.assertEqual(language, ios_strings_loader._decode_filepath_language(path))
+
+
+class EntryDecoratorTests(unittest.TestCase):
+    bold_example = "testing<b>123</b>"
+    italic_example = "testing<i>123</i>"
+    mixed_example = "<b><i>TEST</i></b>"
+
+    def test_encoding(self):
+        self.assertEqual("testing[[b]]123[[/b]]", cell_decorator.encode(self.bold_example))
+        self.assertEqual("testing[[i]]123[[/i]]", cell_decorator.encode(self.italic_example))
+        self.assertEqual("[[b]][[i]]TEST[[/i]][[/b]]", cell_decorator.encode(self.mixed_example))
 
 
 if __name__ == '__main__':

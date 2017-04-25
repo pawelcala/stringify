@@ -7,6 +7,7 @@ from pygsheets import Cell
 
 from model.Base import Command
 from model.Models import Dictionary
+from utils import cell_decorator
 from utils.LogUtils import log_step
 
 
@@ -47,6 +48,7 @@ class GoogleDocsHandler(Command):
             for index, lang in enumerate(languages):
                 column = index + 2
                 translated_value = dictionary.get_translation(key, lang)
+                translated_value = cell_decorator.encode(translated_value)
                 cell = Cell((row, column))
                 cell.value = translated_value
                 cells.append(cell)
@@ -72,7 +74,10 @@ class GoogleDocsHandler(Command):
             for row in entries:
                 if len(row) == 0:
                     continue
-                dictionary.add_translation(row[0], lang, row[i + 1])
+                key = row[0]
+                value = row[i + 1]
+                value = cell_decorator.decode(value)
+                dictionary.add_translation(key, lang, value)
         return dictionary
 
     def _clear_worksheet(self, worksheet):

@@ -43,6 +43,11 @@ class AndroidStringsLoader(DataLoader):
         for child in root:
             if child.tag == 'string':
                 key = child.get('name')
-                value = child.text
+                value = ""
+                for t in child.iter():
+                    if t.tag == 'string':
+                        value += t.text
+                    else:
+                        value += "<{}>{}</{}>".format(t.tag, t.text, t.tag)
                 entries.append((key, value))
         return entries
