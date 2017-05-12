@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
 
-import time
-
-from googledocs.GoogleDocsHandler import GoogleDocsHandler
-from importers.androidimporter import AndroidImporter
-from importers.swiftimporter import SwiftImporter
 from formatter.dictonarytoandroid import DictonaryToAndroid
+from googledocs.GoogleDocsHandler import GoogleDocsHandler
+from importers.bkp.androidimporter import AndroidImporter
+from importers.bkp.swiftimporter import SwiftImporter
 from utils.ArgsUtils import Settings, Mode
-from utils.LogUtils import log_step
 from utils.executiontimer import ExecutionTimer
 
 

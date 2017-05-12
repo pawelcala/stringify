@@ -1,8 +1,7 @@
-import stringify
 import unittest
 
-from importers.androidimporter import AndroidImporter
-from importers.swiftimporter import SwiftImporter
+from importers.bkp.androidimporter import AndroidImporter
+from importers.bkp.swiftimporter import SwiftImporter
 from model.Models import Dictionary
 
 
