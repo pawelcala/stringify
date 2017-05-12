@@ -32,3 +32,19 @@ class Dictionary:
 
     def keys(self):
         return self.dictionary.keys()
+
+    def clear(self):
+        self.dictionary.clear()
+        self.languages.clear()
+
+    def __add__(self, other):
+        new_dictionary = Dictionary()
+        self._populate_dictionary(new_dictionary, self)
+        self._populate_dictionary(new_dictionary, other)
+        return new_dictionary
+
+    def _populate_dictionary(self, dst_dictionary, src_dictionary):
+        for lang in src_dictionary.languages:
+            for key in src_dictionary.keys_iterator():
+                word = src_dictionary.get_translation(key, lang)
+                dst_dictionary.add_translation(key, lang, word)

@@ -1,11 +1,11 @@
 import re
 
-from model.Base import DataLoader, NotFoundException
+from model.Base import DataImporter, NotFoundException
 from model.Models import Dictionary
 from utils.FileUtils import find_files
 
 
-class IOSStringsLoader(DataLoader):
+class SwiftImporter(DataImporter):
     def __init__(self, path, **kwargs):
         self.path = path
         self.filename = kwargs['filename'] if 'filename' in kwargs.keys() else 'Localizable.strings'

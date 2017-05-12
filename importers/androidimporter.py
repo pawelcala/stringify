@@ -1,12 +1,12 @@
 import re
 import xml.etree.ElementTree as ET
 
-from model.Base import DataLoader
+from model.Base import DataImporter
 from model.Models import Dictionary
 from utils.FileUtils import find_files
 
 
-class AndroidStringsLoader(DataLoader):
+class AndroidImporter(DataImporter):
     def __init__(self, path, **kwargs):
         self.path = path
         self.filename = kwargs['xml_name'] if 'xml_name' in kwargs.keys() else 'strings.xml'

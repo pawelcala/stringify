@@ -7,7 +7,7 @@ class Command:
         pass
 
 
-class DataLoader(Command):
+class DataImporter(Command):
     def execute(self):
         raise NotImplemented
 

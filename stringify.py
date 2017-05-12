@@ -3,15 +3,17 @@
 import time
 
 from googledocs.GoogleDocsHandler import GoogleDocsHandler
-from loaders.AndroidStringsLoader import AndroidStringsLoader
-from loaders.IosStringsLoader import IOSStringsLoader
-from producers.AndroidProducer import AndroidProducer
+from importers.androidimporter import AndroidImporter
+from importers.swiftimporter import SwiftImporter
+from formatter.dictonarytoandroid import DictonaryToAndroid
 from utils.ArgsUtils import Settings, Mode
 from utils.LogUtils import log_step
+from utils.executiontimer import ExecutionTimer
 
 
 def main():
-    start_seconds = time.time()
+    execution_timer = ExecutionTimer(log_tag="ScriptTimer")
+    execution_timer.start()
 
     settings = Settings()
     settings.parse()
@@ -26,10 +28,10 @@ def main():
 
         filename = settings.android_destination_filename()
 
-        AndroidProducer(google_docs_handler, google_doc_name,
-                        export_path=export_path,
-                        xml_name=filename,
-                        default_language=default_language).execute()
+        DictonaryToAndroid(google_docs_handler, google_doc_name,
+                           export_path=export_path,
+                           xml_name=filename,
+                           default_language=default_language).execute()
 
     # if mode == Mode.IMPORT_IOS:
     #     export_path = settings[SETTINGS_KEY_EXPORT_PATH]
@@ -46,16 +48,16 @@ def main():
 
         if mode == Mode.EXPORT_ANDROID:
             xml_name = settings.export_filename()
-            loader = AndroidStringsLoader(path=path, xml_name=xml_name, default_language=default_language)
+            loader = AndroidImporter(path=path, xml_name=xml_name, default_language=default_language)
 
         if mode == Mode.EXPORT_IOS:
             filename = settings.export_ios_filename()
-            loader = IOSStringsLoader(path=path, filename=filename)
+            loader = SwiftImporter(path=path, filename=filename)
 
         dictionary = loader.load()
         google_docs_handler.write(google_doc_name, dictionary)
 
-    log_step("Done (took: {} seconds)".format(int(time.time() - start_seconds)))
+    execution_timer.stop()
 
 
 if __name__ == '__main__':

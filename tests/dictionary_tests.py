@@ -1,8 +1,8 @@
 import stringify
 import unittest
 
-from loaders.AndroidStringsLoader import AndroidStringsLoader
-from loaders.IosStringsLoader import IOSStringsLoader
+from importers.androidimporter import AndroidImporter
+from importers.swiftimporter import SwiftImporter
 from model.Models import Dictionary
 
 
@@ -39,6 +39,19 @@ class DictionaryTests(unittest.TestCase):
         self.assertEqual(2, len(dictionary.keys()))
         self.assertEqual(2, len(dictionary.languages))
 
+    def test_add(self):
+        dict1 = Dictionary()
+        dict2 = Dictionary()
+
+        dict1.add_translation('hello', 'en', 'Hello')
+        dict2.add_translation('hello', 'pl', 'Czesc')
+
+        new_dict = dict1 + dict2
+        self.assertEqual(len(new_dict.languages), 2)
+        self.assertEqual(len(new_dict.keys()), 1)
+        self.assertEqual('Hello', new_dict.get_translation('hello', 'en'))
+        self.assertEqual('Czesc', new_dict.get_translation('hello', 'pl'))
+
 
 class AndroidStringsLoaderTests(unittest.TestCase):
     paths_with_languages = list()
@@ -49,7 +62,7 @@ class AndroidStringsLoaderTests(unittest.TestCase):
     paths_with_languages.append(('resources/values/strings.xml', 'en'))
 
     def test_decode_file_path_language(self):
-        android_strings_loader = AndroidStringsLoader("/")
+        android_strings_loader = AndroidImporter("/")
         for case in self.paths_with_languages:
             path = case[0]
             language = case[1]
@@ -62,7 +75,7 @@ class IOSStringsLoaderTests(unittest.TestCase):
     paths_with_languages.append(('/resources/en.lproj/Localizable.strings', 'en'))
 
     def test_decode_file_path_language(self):
-        ios_strings_loader = IOSStringsLoader("/")
+        ios_strings_loader = SwiftImporter("/")
         for case in self.paths_with_languages:
             path = case[0]
             language = case[1]
