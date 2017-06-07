@@ -64,8 +64,13 @@ class GoogleDocsHandler(Command):
 
     def read(self, google_doc_name):
         worksheet = self._get_worksheet(google_doc_name)
-        languages = self._load_languages(worksheet)
-        entries = self._read_strings(worksheet, len(languages))
+        worksheet_cells = worksheet.get_all_values(returnas='cell', include_empty=False)
+
+        languages_row = worksheet_cells[0]
+        values_rows = worksheet_cells[1:]
+
+        languages = self._load_languages(languages_row)
+        entries = self._read_strings(values_rows)
         dictionary = Dictionary()
 
         for i, lang in enumerate(languages):
@@ -78,17 +83,15 @@ class GoogleDocsHandler(Command):
     def _clear_worksheet(self, worksheet):
         worksheet.clear()
 
-    def _load_languages(self, sheet):
+    def _load_languages(self, languages_row):
         log_step("Reading languages")
-        column = 2
         languages = []
-        while True:
-            lang_code = sheet.cell((1, column)).value
-            if len(lang_code.strip()) > 0:
+        for lang_cell in languages_row:
+            lang_code = lang_cell.value.strip()
+            if len(lang_code) > 0:
                 languages.append(lang_code)
-                column += 1
-            else:
-                return languages
+
+        return languages
 
     def _read_row(self, sheet, row, langs_count):
         row_data = list()
@@ -100,20 +103,9 @@ class GoogleDocsHandler(Command):
                 row_data.append(cell_value)
         return row_data
 
-    def _read_strings(self, sheet, langs_count):
+    def _read_strings(self, worksheet_cells):
         log_step("Reading spreadsheet cells")
-        row = 2
         rows = []
-        empty_row = False
-        while True:
-            row_data = self._read_row(sheet, row, langs_count)
-            if len(row_data) == 0:
-                if empty_row:
-                    return rows
-                else:
-                    empty_row = True
-            else:
-                empty_row = False
-
-            rows.append(row_data)
-            row += 1
+        for row in worksheet_cells:
+            rows.append([x.value for x in row])
+        return rows
