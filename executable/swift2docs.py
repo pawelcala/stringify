@@ -1,11 +1,11 @@
-from xml.etree import ElementTree
-from googledocs.GoogleDocsHandler import GoogleDocsHandler
-from model.Models import Dictionary
-from utils.language_decoders import AndroidLanguagePathDecoder
+import re
+from googledocs.googledocs import GoogleDocsHandler
+from model.models import Dictionary
+from utils.language_decoders import IosSwiftLanguagePathDecoder
 from utils.localizable_finder import LocalizableFinder
 
 
-class AndroidToDocs:
+class SwiftToDocs:
     def __init__(self, settings):
         self.directory = settings.export_path()
         self.default_lang = settings.default_language()
@@ -19,33 +19,23 @@ class AndroidToDocs:
         files = files_finder.find(language_decoders=[self.langage_path_decoder])
         dictionary = Dictionary()
         for file_path, language in files:
-            atd = AndroidStringsImport(dictionary)
+            atd = SwiftImport(dictionary)
             atd.format(open(file_path), language)
 
         google_doc_handler = GoogleDocsHandler(self.google_credentials_path)
         google_doc_handler.write(self.google_sheet_name, dictionary)
 
     def langage_path_decoder(self, path):
-        return AndroidLanguagePathDecoder(path, self.default_lang).decode()
+        return IosSwiftLanguagePathDecoder(path).decode()
 
 
-class AndroidStringsImport:
-    def __init__(self, dictionary=Dictionary()):
+class SwiftImport:
+    def __init__(self, dictionary):
         self.dictionary = dictionary
 
-    def format(self, xml, language):
-        root = self._get_root_element(xml)
-
-        for child in root:
-            if child.tag == 'string':
-                key = child.get('name')
-                value = child.text
-                self.dictionary.add_translation(key, language, value)
+    def format(self, file, language):
+        for line in file:
+            match = re.match(r'"(.*)".*=.*"(.*)";', line)
+            if match:
+                self.dictionary.add_translation(match.group(1), language, match.group(2))
         return self.dictionary
-
-    def _get_root_element(self, xml):
-        if isinstance(xml, str):
-            root = ElementTree.fromstring(xml)
-        else:
-            root = ElementTree.parse(xml).getroot()
-        return root

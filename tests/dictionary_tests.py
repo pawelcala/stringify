@@ -2,7 +2,7 @@ import unittest
 
 from importers.bkp.androidimporter import AndroidImporter
 from importers.bkp.swiftimporter import SwiftImporter
-from model.Models import Dictionary
+from model.models import Dictionary
 
 
 class DictionaryTests(unittest.TestCase):

@@ -1,6 +1,6 @@
 import argparse
 
-from utils.LogUtils import log_exception
+from utils.log_utils import log_exception
 
 
 class Mode:

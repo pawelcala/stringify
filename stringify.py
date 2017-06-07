@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-from executable.AndroidToDocs import AndroidToDocs
-from executable.DocsToAndroid import DocsToAndroid
-from executable.DocsToSwift import DocsToSwift
-from executable.SwiftToDocs import SwiftToDocs
-from utils.ArgsUtils import Settings, Mode
+from executable.android2docs import AndroidToDocs
+from executable.docs2android import DocsToAndroid
+from executable.docs2swift import DocsToSwift
+from executable.swift2docs import SwiftToDocs
+from utils.args_utils import Settings, Mode
 from utils.executiontimer import ExecutionTimer
 
 MODE_EXECS = {

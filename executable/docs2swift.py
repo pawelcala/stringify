@@ -1,6 +1,6 @@
 import io
 
-from googledocs.GoogleDocsHandler import GoogleDocsHandler
+from googledocs.googledocs import GoogleDocsHandler
 
 
 class DocsToSwift:

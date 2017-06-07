@@ -1,6 +1,6 @@
 import os
 
-from utils.LogUtils import log_step
+from utils.log_utils import log_step
 
 
 def find_files(path='.', filename_regex=None):

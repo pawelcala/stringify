@@ -5,9 +5,9 @@ import time
 
 from pygsheets import Cell
 
-from model.Base import Command
-from model.Models import Dictionary
-from utils.LogUtils import log_step
+from model.base import Command
+from model.models import Dictionary
+from utils.log_utils import log_step
 
 
 class GoogleDocsHandler(Command):

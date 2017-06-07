@@ -1,7 +1,7 @@
 from xml.dom import minidom
 from xml.etree import ElementTree
-from googledocs.GoogleDocsHandler import GoogleDocsHandler
-from model.Models import Dictionary
+from googledocs.googledocs import GoogleDocsHandler
+from model.models import Dictionary
 
 
 class DocsToAndroid:

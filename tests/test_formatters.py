@@ -2,7 +2,7 @@ import unittest
 
 from formatter.android_formatters import DictionaryToAndroid, AndroidToDictionary
 from formatter.ios_swift_formatters import DictionaryToSwift, SwiftToDictionary
-from model.Models import Dictionary
+from model.models import Dictionary
 
 
 class TestAndroidFormatter(unittest.TestCase):
