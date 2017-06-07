@@ -1,8 +1,8 @@
-from formatter.ios_swift_formatters import SwiftToDictionary
+import re
 from googledocs.GoogleDocsHandler import GoogleDocsHandler
-from importers.language_decoders import IosSwiftLanguagePathDecoder
-from importers.localizable_finder import LocalizableFinder
 from model.Models import Dictionary
+from utils.language_decoders import IosSwiftLanguagePathDecoder
+from utils.localizable_finder import LocalizableFinder
 
 
 class SwiftToDocs:
@@ -19,7 +19,7 @@ class SwiftToDocs:
         files = files_finder.find(language_decoders=[self.langage_path_decoder])
         dictionary = Dictionary()
         for file_path, language in files:
-            atd = SwiftToDictionary(dictionary)
+            atd = SwiftImport(dictionary)
             atd.format(open(file_path), language)
 
         google_doc_handler = GoogleDocsHandler(self.google_credentials_path)
@@ -27,3 +27,15 @@ class SwiftToDocs:
 
     def langage_path_decoder(self, path):
         return IosSwiftLanguagePathDecoder(path).decode()
+
+
+class SwiftImport:
+    def __init__(self, dictionary):
+        self.dictionary = dictionary
+
+    def format(self, file, language):
+        for line in file:
+            match = re.match(r'"(.*)".*=.*"(.*)";', line)
+            if match:
+                self.dictionary.add_translation(match.group(1), language, match.group(2))
+        return self.dictionary

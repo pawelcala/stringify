@@ -1,8 +1,8 @@
-from formatter.android_formatters import AndroidToDictionary
+from xml.etree import ElementTree
 from googledocs.GoogleDocsHandler import GoogleDocsHandler
-from importers.language_decoders import AndroidLanguagePathDecoder
-from importers.localizable_finder import LocalizableFinder
 from model.Models import Dictionary
+from utils.language_decoders import AndroidLanguagePathDecoder
+from utils.localizable_finder import LocalizableFinder
 
 
 class AndroidToDocs:
@@ -19,7 +19,7 @@ class AndroidToDocs:
         files = files_finder.find(language_decoders=[self.langage_path_decoder])
         dictionary = Dictionary()
         for file_path, language in files:
-            atd = AndroidToDictionary(dictionary)
+            atd = AndroidStringsImport(dictionary)
             atd.format(open(file_path), language)
 
         google_doc_handler = GoogleDocsHandler(self.google_credentials_path)
@@ -27,3 +27,25 @@ class AndroidToDocs:
 
     def langage_path_decoder(self, path):
         return AndroidLanguagePathDecoder(path, self.default_lang).decode()
+
+
+class AndroidStringsImport:
+    def __init__(self, dictionary=Dictionary()):
+        self.dictionary = dictionary
+
+    def format(self, xml, language):
+        root = self._get_root_element(xml)
+
+        for child in root:
+            if child.tag == 'string':
+                key = child.get('name')
+                value = child.text
+                self.dictionary.add_translation(key, language, value)
+        return self.dictionary
+
+    def _get_root_element(self, xml):
+        if isinstance(xml, str):
+            root = ElementTree.fromstring(xml)
+        else:
+            root = ElementTree.parse(xml).getroot()
+        return root
