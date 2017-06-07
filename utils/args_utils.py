@@ -1,6 +1,6 @@
 import argparse
 
-from utils.log_utils import log_exception
+from utils.log_utils import log_exception, log_step
 
 
 class Mode:
@@ -33,7 +33,7 @@ class Settings:
         self.settings = dict()
 
     def debug(self):
-        print(self.settings)
+        log_step("program args:\t" + str(self.settings))
 
     def parse(self):
         self.settings.update({SETTINGS_KEY_DEFAULT_LANG: SETTINGS_DEFAULT_LANG})

@@ -5,6 +5,7 @@ from executable.docs2swift import DocsToSwift
 from executable.swift2docs import SwiftToDocs
 from utils.args_utils import Settings, Mode
 from utils.executiontimer import ExecutionTimer
+from utils.log_utils import log_step
 
 MODE_EXECS = {
     Mode.EXPORT_ANDROID: AndroidToDocs,
@@ -15,7 +16,7 @@ MODE_EXECS = {
 
 
 def main():
-    execution_timer = ExecutionTimer(log_tag="ScriptTimer")
+    execution_timer = ExecutionTimer(log_tag="stringify", logger=log_step)
     execution_timer.start()
 
     settings = Settings()

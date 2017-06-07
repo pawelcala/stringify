@@ -2,6 +2,7 @@ from xml.dom import minidom
 from xml.etree import ElementTree
 from googledocs.googledocs import GoogleDocsHandler
 from model.models import Dictionary
+from utils.log_utils import log_step
 
 
 class DocsToAndroid:
@@ -23,7 +24,7 @@ class DocsToAndroid:
             language_data = dta.format(language)
             formatted_data.update({language: language_data})
 
-        print(formatted_data)
+        log_step(formatted_data)
 
 
 class AndroidStringsExport:

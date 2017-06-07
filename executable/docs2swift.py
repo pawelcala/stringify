@@ -1,6 +1,7 @@
 import io
 
 from googledocs.googledocs import GoogleDocsHandler
+from utils.log_utils import log_step
 
 
 class DocsToSwift:
@@ -22,7 +23,7 @@ class DocsToSwift:
             language_data = dta.format(language)
             formatted_data.update({language: language_data})
 
-        print(formatted_data)
+        log_step(formatted_data)
 
 
 class SwiftExport:
