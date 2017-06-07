@@ -4,7 +4,7 @@ from xml.dom import minidom
 from model.Models import Dictionary
 
 
-class DictonaryToAndroid:
+class DictionaryToAndroid:
     def __init__(self, dictionary=Dictionary(), use_pretty_xml=True):
         self.dictionary = dictionary
         self.use_pretty_xml = use_pretty_xml
@@ -26,7 +26,7 @@ class DictonaryToAndroid:
         return xml
 
 
-class AndroidToDictonary:
+class AndroidToDictionary:
     def __init__(self, dictionary=Dictionary()):
         self.dictionary = dictionary
 

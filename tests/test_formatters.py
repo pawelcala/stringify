@@ -1,7 +1,7 @@
 import unittest
 
-from formatter.dictonarytoandroid import DictonaryToAndroid, AndroidToDictonary
-from formatter.dictionarytoswift import DictionaryToSwift, SwiftToDictionary
+from formatter.android_formatters import DictionaryToAndroid, AndroidToDictionary
+from formatter.ios_swift_formatters import DictionaryToSwift, SwiftToDictionary
 from model.Models import Dictionary
 
 
@@ -19,14 +19,14 @@ class TestAndroidFormatter(unittest.TestCase):
         return result
 
     def test_template(self):
-        formatter = DictonaryToAndroid(dictionary=self.dictionary, use_pretty_xml=False)
+        formatter = DictionaryToAndroid(dictionary=self.dictionary, use_pretty_xml=False)
         formatted_string = formatter.format('en')
         dictionary_result = self._generate_result((('hello', 'Hi'), ('welcome', 'Welcome')))
         self.assertEqual(formatted_string, dictionary_result)
 
     def test_empty(self):
         self.dictionary.clear()
-        formatter = DictonaryToAndroid(dictionary=self.dictionary, use_pretty_xml=False)
+        formatter = DictionaryToAndroid(dictionary=self.dictionary, use_pretty_xml=False)
         result = formatter.format('en')
         expected_result = self._generate_result()
         self.assertEqual(result, expected_result)
@@ -60,7 +60,7 @@ class TestAndroidToDictionary(unittest.TestCase):
 
     def test_simple(self):
         dictionary = Dictionary()
-        formatter = AndroidToDictonary(dictionary)
+        formatter = AndroidToDictionary(dictionary)
         formatter.format(self.xml, 'en')
         self.assertEqual(dictionary.get_translation('hi', 'en'), 'Hi')
         self.assertEqual(dictionary.get_translation('welcome', 'en'), 'Welcome')

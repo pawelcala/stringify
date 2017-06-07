@@ -32,6 +32,9 @@ class Settings:
     def __init__(self):
         self.settings = dict()
 
+    def debug(self):
+        print(self.settings)
+
     def parse(self):
         self.settings.update({SETTINGS_KEY_DEFAULT_LANG: SETTINGS_DEFAULT_LANG})
         self.settings.update({SETTINGS_KEY_MODE: SETTINGS_DEFAULT_MODE})

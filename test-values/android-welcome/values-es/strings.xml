@@ -1,0 +1,5 @@
+<?xml version="1.0" ?>
+<resources>
+	<string name="hello">¡Hola &lt;b&gt;bold&lt;/b&gt;</string>
+	<string name="welcome">Bienvenido</string>
+</resources>
