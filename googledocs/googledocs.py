@@ -11,7 +11,8 @@ from utils.log_utils import log_step
 
 
 class GoogleDocsHandler(Command):
-    def __init__(self, credentials_path):
+    def __init__(self, credentials_path, keys_as_values_if_empty=True):
+        self.keys_as_values_if_empty = keys_as_values_if_empty
         self.client = None
         self.credentials_path = credentials_path
 
@@ -66,6 +67,8 @@ class GoogleDocsHandler(Command):
         worksheet = self._get_worksheet(google_doc_name)
         worksheet_cells = worksheet.get_all_values(returnas='cell', include_empty=False)
 
+        log_step(str(worksheet_cells))
+
         languages_row = worksheet_cells[0]
         values_rows = worksheet_cells[1:]
 
@@ -75,9 +78,16 @@ class GoogleDocsHandler(Command):
 
         for i, lang in enumerate(languages):
             for row in entries:
-                if len(row) == 0:
+                value_idx = i + 1
+                key = row[0]
+                value = row[value_idx] if value_idx < len(row) else None
+
+                if len(key) == 0:
                     continue
-                dictionary.add_translation(row[0], lang, row[i + 1])
+                else:
+                    if value is None and self.keys_as_values_if_empty:
+                        value = key
+                    dictionary.add_translation(key, lang, value)
         return dictionary
 
     def _clear_worksheet(self, worksheet):
