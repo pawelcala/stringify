@@ -1,7 +1,9 @@
+import os
 from xml.dom import minidom
 from xml.etree import ElementTree
 from googledocs.googledocs import GoogleDocsHandler
 from model.models import Dictionary
+from utils import file_utils
 from utils.log_utils import log_step
 
 
@@ -19,12 +21,19 @@ class DocsToAndroid:
         dictionary = google_doc_handler.read(self.google_sheet_name)
         dta = AndroidStringsExport(dictionary)
 
-        formatted_data = dict()
         for language in dictionary.languages:
             language_data = dta.format(language)
-            formatted_data.update({language: language_data})
+            self.save_language_data(language, language_data)
 
-        log_step(formatted_data)
+    def save_language_data(self, language, language_data):
+        """
+        TODO Refactoring!
+        """
+        dir = self.directory + os.sep + "values"
+        if language != self.default_lang:
+            dir += "-" + language
+
+        file_utils.save_file(language_data, dir, self.files_regex)
 
 
 class AndroidStringsExport:

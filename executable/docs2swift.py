@@ -1,14 +1,15 @@
 import io
+import os
 
 from googledocs.googledocs import GoogleDocsHandler
-from utils.log_utils import log_step
+from utils import file_utils
 
 
 class DocsToSwift:
     def __init__(self, settings):
         self.directory = settings.export_path()
         self.default_lang = settings.default_language()
-        self.files_regex = settings.export_filename()
+        self.files_regex = settings.export_ios_filename()
 
         self.google_credentials_path = settings.credentials_location()
         self.google_sheet_name = settings.google_doc_name()
@@ -18,12 +19,16 @@ class DocsToSwift:
         dictionary = google_doc_handler.read(self.google_sheet_name)
         dta = SwiftExport(dictionary)
 
-        formatted_data = dict()
         for language in dictionary.languages:
             language_data = dta.format(language)
-            formatted_data.update({language: language_data})
+            self.save_language_data(language, language_data)
 
-        log_step(formatted_data)
+    def save_language_data(self, language, language_data):
+        """
+        TODO Refactoring!
+        """
+        dir = self.directory + os.sep + "{}.lproj".format(language)
+        file_utils.save_file(language_data, dir, self.files_regex)
 
 
 class SwiftExport:

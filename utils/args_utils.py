@@ -25,7 +25,7 @@ SETTINGS_DEFAULT_XML_NAME = "strings.xml"
 SETTINGS_DEFAULT_LOCALIZABLE_NAME = "Localizable.strings"
 SETTINGS_DEFAULT_LOGS_ON = True
 
-G_FILE = "stringify_1.json"
+G_FILE = ".google_credentials.json"
 
 
 class Settings:
@@ -43,9 +43,6 @@ class Settings:
         self.settings.update({SETTINGS_KEY_CREDENTIALS_LOCATION: G_FILE})
 
         parser = argparse.ArgumentParser(description='Stringify parser')
-        parser.add_argument("-d", "--default-lang",
-                            help="Android default language. Default language sets values folder "
-                                 "without language postfix. If left 'en' is set.")
 
         parser.add_argument("-n", "--spreadsheet-name", help="Google Spreadsheet name.")
 
@@ -55,6 +52,10 @@ class Settings:
 
         parser.add_argument("-x", "--xml-filename", help="Android xml or swift strings filename. "
                                                          "Default: strings.xml (Android), Localizable.strings (iOS)")
+
+        parser.add_argument("-d", "--default-lang",
+                            help="Android default language. Default language sets values folder "
+                                 "without language postfix. If left 'en' is set.")
 
         parser.add_argument("-m", "--mode",
                             help="Available modes: "
