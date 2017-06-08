@@ -20,7 +20,6 @@ def find_files(path='.', filename_regex=None):
 
 
 def save_file(content, dir_name, file_name):
-    log_step("Saving file {}/{}".format(dir_name, file_name))
     current_dir = os.getcwd()
     try:
         os.makedirs(dir_name, exist_ok=True)
@@ -32,7 +31,7 @@ def save_file(content, dir_name, file_name):
     except Exception:
         pass
 
-    log_step("Working directory {}".format(os.getcwd()))
+    log_step("Saving file {}/{}".format(os.getcwd(), file_name))
     file = open(file_name, "w")
     file.write(content)
     file.close()

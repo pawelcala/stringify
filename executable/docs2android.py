@@ -1,10 +1,10 @@
+import html
 import os
 from xml.dom import minidom
 from xml.etree import ElementTree
 from googledocs.googledocs import GoogleDocsHandler
 from model.models import Dictionary
 from utils import file_utils
-from utils.log_utils import log_step
 
 
 class DocsToAndroid:
@@ -49,7 +49,7 @@ class AndroidStringsExport:
             string_element.set('name', key)
             string_element.text = string
 
-        xml = ElementTree.tostring(xml_document, 'utf-8', method='html')
+        xml = ElementTree.tostring(xml_document, 'utf-8')
         if self.use_pretty_xml:
             dom = minidom.parseString(xml)
             xml = dom.toprettyxml()
