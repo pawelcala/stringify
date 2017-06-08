@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
 <resources>
-	<string name="hello">Cześć&lt;b&gt;bold&lt;/b&gt;</string>
+	<string name="hello">Cześć<b>bold</b></string>
 	<string name="welcome">Witaj</string>
 </resources>
