@@ -46,7 +46,7 @@ optional arguments:
   -o LOGS_OFF, --logs-off LOGS_OFF
                         Turns progress debug logs off
   -u OAUTH_CREDENTIALS_LOCATION, --oauth-credentials-location OAUTH_CREDENTIALS_LOCATION
-                        oauth credentials location. Default: .credentials
+                        oauth credentials location. Default: .google_credentials.json
 
 ```
 
