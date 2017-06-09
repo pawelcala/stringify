@@ -19,7 +19,7 @@ class DocsToAndroid:
     def execute(self):
         google_doc_handler = GoogleDocsHandler(self.google_credentials_path)
         dictionary = google_doc_handler.read(self.google_sheet_name)
-        dta = AndroidStringsExport(dictionary)
+        dta = AndroidRawStringsExport(dictionary)
 
         for language in dictionary.languages:
             language_data = dta.format(language)
@@ -36,11 +36,16 @@ class DocsToAndroid:
         file_utils.save_file(language_data, dir, self.files_regex)
 
 
-class AndroidStringsExport:
+class AndroidExport:
     def __init__(self, dictionary=Dictionary(), use_pretty_xml=True):
         self.dictionary = dictionary
         self.use_pretty_xml = use_pretty_xml
 
+    def format(self, language):
+        pass
+
+
+class AndroidXMLStringsExport(AndroidExport):
     def format(self, language):
         xml_document = ElementTree.Element('resources')
         for key in self.dictionary.keys():
@@ -56,3 +61,13 @@ class AndroidStringsExport:
         else:
             return xml.decode('utf-8')
         return xml
+
+
+class AndroidRawStringsExport(AndroidExport):
+    def format(self, language):
+        strings = list()
+        for key in self.dictionary.keys():
+            string = self.dictionary.get_translation(key, language)
+            strings.append("""\n\t<string name="{}">{}</string>""".format(key, string))
+        resources_xml = """<?xml version="1.0" ?>\n<resources>{}\n</resources>""".format("".join(strings))
+        return resources_xml
