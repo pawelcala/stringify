@@ -22,8 +22,11 @@ class SwiftToDocs:
             atd = SwiftImport(dictionary)
             atd.format(open(file_path), language)
 
-        google_doc_handler = GoogleDocsHandler(self.google_credentials_path)
-        google_doc_handler.write(self.google_sheet_name, dictionary)
+        if dictionary.is_empty():
+            raise Exception("Empty dictionary!")
+        else:
+            google_doc_handler = GoogleDocsHandler(self.google_credentials_path)
+            google_doc_handler.write(self.google_sheet_name, dictionary)
 
     def langage_path_decoder(self, path):
         return IosSwiftLanguagePathDecoder(path).decode()

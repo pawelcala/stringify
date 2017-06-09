@@ -14,7 +14,7 @@ class Mode:
 SETTINGS_KEY_GDOC_NAME = "spreadsheet_name"
 SETTINGS_KEY_DEFAULT_LANG = "default_language"
 SETTINGS_KEY_EXPORT_PATH = "locale"
-SETTINGS_KEY_XML_NAME = "xml_name"
+SETTINGS_KEY_LOCALE_FILENAME = "file_name"
 SETTINGS_KEY_MODE = "mode"
 SETTINGS_KEY_LOGS_ON = "logs_on"
 SETTINGS_KEY_CREDENTIALS_LOCATION = "credentials_location"
@@ -50,8 +50,8 @@ class Settings:
                             help="Localized strings destination path. Should point on project/module directory "
                                  "(Used in both modes - IMPORT and EXPORT).")
 
-        parser.add_argument("-x", "--xml-filename", help="Android xml or swift strings filename. "
-                                                         "Default: strings.xml (Android), Localizable.strings (iOS)")
+        parser.add_argument("-f", "--filename", help="Android xml or swift strings filename. "
+                                                     "Default: strings.xml (Android), Localizable.strings (iOS)")
 
         parser.add_argument("-d", "--default-lang",
                             help="Android default language. Default language sets values folder "
@@ -85,8 +85,8 @@ class Settings:
         if args.dest_path:
             self.settings.update({SETTINGS_KEY_EXPORT_PATH: args.dest_path})
 
-        if args.xml_filename:
-            self.settings.update({SETTINGS_KEY_XML_NAME: args.xml_filename})
+        if args.filename:
+            self.settings.update({SETTINGS_KEY_LOCALE_FILENAME: args.filename})
 
         if args.logs_off:
             self.settings.update({SETTINGS_KEY_LOGS_ON: False})
@@ -109,14 +109,20 @@ class Settings:
     def default_language(self):
         return self.settings.get(SETTINGS_KEY_DEFAULT_LANG)
 
-    def android_destination_filename(self):
-        return self.settings[
-            SETTINGS_KEY_XML_NAME] if SETTINGS_KEY_XML_NAME in self.settings.keys() else SETTINGS_DEFAULT_XML_NAME
-
     def export_filename(self):
-        return self.settings[SETTINGS_KEY_XML_NAME] if SETTINGS_KEY_XML_NAME in self.settings.keys() \
-            else SETTINGS_DEFAULT_XML_NAME
+        return self.settings[SETTINGS_KEY_LOCALE_FILENAME] if SETTINGS_KEY_LOCALE_FILENAME in self.settings.keys() \
+            else self._default_filename_for_mode(self.settings[SETTINGS_KEY_MODE])
 
-    def export_ios_filename(self):
-        return self.settings[SETTINGS_KEY_XML_NAME] if SETTINGS_KEY_XML_NAME in self.settings.keys() \
-            else SETTINGS_DEFAULT_LOCALIZABLE_NAME
+    # def android_destination_filename(self):
+    #     return self.settings[
+    #         SETTINGS_KEY_XML_NAME] if SETTINGS_KEY_XML_NAME in self.settings.keys() else SETTINGS_DEFAULT_XML_NAME
+
+    # def export_ios_filename(self):
+    #     return self.settings[SETTINGS_KEY_XML_NAME] if SETTINGS_KEY_XML_NAME in self.settings.keys() \
+    #         else SETTINGS_DEFAULT_LOCALIZABLE_NAME
+
+    def _default_filename_for_mode(self, mode):
+        if mode == Mode.EXPORT_ANDROID or mode == Mode.IMPORT_ANDROID:
+            return SETTINGS_DEFAULT_XML_NAME
+        else:
+            return SETTINGS_DEFAULT_LOCALIZABLE_NAME

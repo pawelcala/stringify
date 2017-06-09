@@ -33,6 +33,9 @@ class Dictionary:
     def keys(self):
         return self.dictionary.keys()
 
+    def is_empty(self):
+        return len(self.languages) == 0 or len(self.dictionary) == 0
+
     def clear(self):
         self.dictionary.clear()
         self.languages.clear()
