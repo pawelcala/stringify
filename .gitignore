@@ -2,3 +2,6 @@
 .credentials
 __pycache__/
 res/
+tmp/
+*.json
+.imported-values

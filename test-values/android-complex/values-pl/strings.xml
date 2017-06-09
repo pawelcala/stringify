@@ -1,0 +1,16 @@
+<?xml version="1.0" ?>
+<resources>
+	<string name="hello">Cześć&lt;b&gt;bold&lt;/b&gt;</string>
+	<string name="welcome">
+		1
+		2
+		3
+		4
+		5
+		6
+		7
+		8
+		9
+		ąćś
+	</string>
+</resources>

@@ -1,2 +1,2 @@
-gspread >= 0.6.2
+pygsheets >= 1.1.1
 oauth2client >= 4.0.0

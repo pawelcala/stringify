@@ -5,13 +5,13 @@ Stringify is a python tool for exporting localized strings files for Android and
 ## Installation steps:
 
 1. Install python 3
-1. Install dependencies: [**gspread**](https://github.com/burnash/gspread) and [**oauth2client**](https://github.com/google/oauth2client) with:
+1. Install dependencies: [**pygsheets**](https://github.com/nithinmurali/pygsheets) and [**oauth2client**](https://github.com/google/oauth2client) with:
 ```
 pip install -r requirements.txt
 ```
 1. Head to [**Google Developers Console**](https://console.developers.google.com/project) and create a new project
-1. Enable _Drive API_
-1. Create credentials and copy _CLIENT_ID_ and _CLIENT_SECRET_
+1. Enable _Drive API_ and _Spreadsheet API_
+1. Save oauth credentials file as _client_secret.json_ in project directory
 1. You are ready to go
 
 ## How to use:
@@ -34,7 +34,7 @@ optional arguments:
                         Localized strings destination path. Should point on
                         project/module directory (Used in both modes - IMPORT
                         and EXPORT).
-  -x XML_FILENAME, --xml-filename XML_FILENAME
+  -f FILENAME, --filename XML_FILENAME
                         Android xml or swift strings filename. Default:
                         strings.xml (Android), Localizable.strings (iOS)
   -m MODE, --mode MODE  Available modes: export_ios - exports/uploads ios
@@ -46,7 +46,7 @@ optional arguments:
   -o LOGS_OFF, --logs-off LOGS_OFF
                         Turns progress debug logs off
   -u OAUTH_CREDENTIALS_LOCATION, --oauth-credentials-location OAUTH_CREDENTIALS_LOCATION
-                        oauth credentials location. Default: .credentials
+                        oauth credentials location. Default: .google_credentials.json
 
 ```
 
@@ -60,7 +60,7 @@ optional arguments:
 
 ###### Example: Download Android strings
 ```
-./stringify.py -n sample_spreadsheet -m import_android -x welcome.xml -p app/src/main/res
+./stringify.py -n sample_spreadsheet -m import_android -f welcome.xml -p app/src/main/res
 ```
 
 _Result:_
