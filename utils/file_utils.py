@@ -32,7 +32,7 @@ def save_file(content, dir_name, file_name):
         pass
 
     log_step("Saving file {}/{}".format(os.getcwd(), file_name))
-    file = open(file_name, "w")
+    file = open(file_name, "w", encoding="utf-8")
     file.write(content)
     file.close()
     os.chdir(current_dir)
