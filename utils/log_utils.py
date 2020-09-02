@@ -10,7 +10,7 @@ def log_exception(message, force_quit=False):
 
 
 def log_step(message):
-    print("[stringify]:\t{}".format(message))
+    print("[stringify]:\t{}".format(message.encode('utf-8')))
 
 
 def log_version():
